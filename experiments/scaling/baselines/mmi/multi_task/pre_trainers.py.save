@@ -1,0 +1,323 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import Dense, Flatten, Dropout
+from tensorflow.keras import layers
+import gc
+import os
+
+# Disable XLA at the start of this module
+os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices=false'
+tf.config.optimizer.set_jit(False)
+
+from backbones import *
+from data_loader import *
+
+base_dir = "/app/data/experiments/baselines"
+
+# Make sure these exist
+graph_data_dir = os.path.join(base_dir, "multi_task/graph_data")
+graphs_dir = os.path.join(base_dir, "multi_task/graphs")
+
+os.makedirs(graph_data_dir, exist_ok=True)
+os.makedirs(graphs_dir, exist_ok=True)
+
+
+class AugmentedDataSequence(tf.keras.utils.Sequence):
+    """Keras Sequence for on-the-fly data augmentation"""
+
+    def __init__(self, base_generator, transformations, sigma_l, ext=False,
+                 batches_per_epoch=100):
+        self.base_generator = base_generator
+        self.transformations = transformations
+        self.sigma_l = sigma_l
+        self.ext = ext
+        self.n_transforms = len(transformations)
+        self.batches_per_epoch = batches_per_epoch
+        self.cached_batches = []
+        self.cache_epoch_data()
+
+    def cache_epoch_data(self):
+        self.cached_batches = []
+        batch_count = 0
+        for batch_x, batch_y in self.base_generator:
+            self.cached_batches.append((batch_x, batch_y))
+            batch_count += 1
+            if batch_count >= self.batches_per_epoch:
+                break
+
+    def __len__(self):
+        return len(self.cached_batches) * self.n_transforms
+
+    def __getitem__(self, idx):
+        base_batch_idx = idx // self.n_transforms
+        transform_idx = idx % self.n_transforms
+        batch_x, batch_y = self.cached_batches[base_batch_idx]
+        batch_size = len(batch_x)
+        half = batch_size // 2
+        
+        transform = self.transformations[transform_idx]
+        sigma = self.sigma_l[transform_idx]
+        
+        augmented = np.array([transform(x, sigma=sigma) for x in batch_x[:half]], dtype=np.float32)
+        original = np.array(batch_x[half:], dtype=np.float32)
+        
+        combined_data = np.concatenate([augmented, original], axis=0)
+        combined_labels = np.concatenate([
+            np.ones(half, dtype=np.float32),
+            np.zeros(batch_size - half, dtype=np.float32)
+        ])
+        
+        shuffle_idx = np.random.permutation(batch_size)
+        combined_data = combined_data[shuffle_idx]
+        combined_labels = combined_labels[shuffle_idx]
+        
+        x_dict = {}
+        y_dict = {}
+        sample_weight_dict = {}
+        
+        for i in range(self.n_transforms):
+            if i == transform_idx:
+                x_dict[f"input_{i + 1}"] = combined_data
+                y_dict[f"head_{i + 1}"] = combined_labels
+                sample_weight_dict[f"head_{i + 1}"] = np.ones(batch_size, dtype=np.float32)
+            else:
+                x_dict[f"input_{i + 1}"] = np.zeros_like(combined_data)
+                y_dict[f"head_{i + 1}"] = np.zeros(batch_size, dtype=np.float32)
+                sample_weight_dict[f"head_{i + 1}"] = np.zeros(batch_size, dtype=np.float32)
+
+        return x_dict, y_dict, sample_weight_dict
+
+    def on_epoch_end(self):
+        self.cache_epoch_data()
+        gc.collect()
+
+
+def pre_trainer(scen):
+    """Pre-train feature extractor - SIMPLE & REGULARIZED approach"""
+    frame_size = 40
+    path = "/app/data/1.0.0"
+    batch_size = 8
+
+    users = list(range(1, 110))
+    train_sessions = list(range(1, 15))
+
+    print(f"SIMPLE & REGULARIZED PRE-TRAINING")
+    print(f"Setting up for {len(users)} users, sessions {train_sessions}")
+
+    print("Computing normalization statistics...")
+    mean, std = compute_normalization_stats(
+        path, users=users, sessions=train_sessions,
+        frame_size=frame_size, max_samples_per_session=5000
+    )
+
+    print("Creating data generator...")
+    base_generator = EEGDataGenerator(
+        path, users, train_sessions, frame_size,
+        batch_size=batch_size,
+        max_samples_per_session=5000,
+        mean=mean, std=std, shuffle=True
+    )
+
+    steps_per_epoch = base_generator.get_steps_per_epoch()
+    batches_per_epoch = min(steps_per_epoch, 200)
+    print(f"Using {batches_per_epoch} batches per epoch")
+
+    first_batch_x, first_batch_y = next(iter(base_generator))
+    n_channels = first_batch_x.shape[-1]
+    print(f"Data shape: (batch_size={batch_size}, {frame_size}, {n_channels})")
+
+    transformations = [
+        DA_RandSampling,   # 76
+        DA_Flip,           # Same but works
+        DA_Drop,           # 94%
+        DA_Negation        # NEW - sign flip
+    ]
+    sigma_l = [None, None, 6, None]
+
+    print(f"\nAugmentations (FIXED - replaced weak ones): {[t.__name__ for t in transformations]}")
+    print(f"Sigma values: {sigma_l}")
+    print("Changed: Jitter→ChannelShuffle, Scaling→Permutation, MagWarp→TimeWarp (stronger)")
+
+    # SIMPLER architecture - back to con=3
+    con = 3
+    ks = 3
+
+    def trunk():
+        """
+        SIMPLE trunk - 2 ResNet blocks with moderate width
+        Prevents overfitting while maintaining capacity for 109 users
+        """
+        input_ = Input(shape=(frame_size, n_channels), name='input_')
+        
+        # Initial conv
+        x = Conv1D(filters=16 * con, kernel_size=ks, strides=1, padding='same')(input_)
+        x = BatchNormalization()(x)
+        x = ReLU()(x)
+        x = MaxPooling1D(pool_size=4, strides=4)(x)
+        x = Dropout(rate=0.2)(x)  # Higher dropout
+        
+        # ResNet Block 1
+        x = resnetblock(x, CR=48 * con, KS=ks)
+        x = Dropout(rate=0.2)(x)
+        
+        # Final ResNet Block
+        x = resnetblock_final(x, CR=96 * con, KS=ks)
+        
+        return tf.keras.models.Model(input_, x, name='trunk_')
+
+    inputs = []
+    for i in range(len(transformations)):
+        inputs.append(Input(shape=(frame_size, n_channels), name=f'input_{i+1}'))
+
+    trunk = trunk()
+    trunk.summary()
+
+    fets = [trunk(inp) for inp in inputs]
+
+    # MUCH SIMPLER HEADS with HEAVY regularization
+    heads = []
+    for i, fet in enumerate(fets):
+        head_name = 'head_' + str(i + 1)
+        
+        # Simple: 128 → 1 (that's it!)
+        # Heavy dropout to prevent overfitting
+        x = Dense(128, activation='relu')(fet)
+        x = Dropout(0.5)(x)  # Very high dropout
+        head = Dense(1, activation='sigmoid', name=head_name)(x)
+        heads.append(head)
+
+    model = tf.keras.models.Model(inputs, heads, name='multi-task_self-supervised')
+
+    # Compile
+    loss = ['binary_crossentropy'] * len(transformations)
+    loss_weights = [1 / len(transformations)] * len(transformations)
+    metrics = [[tf.keras.metrics.BinaryAccuracy(name=f'binary_accuracy')] for _ in transformations]
+
+    # LOWER learning rate for stability
+    opt = tf.keras.optimizers.Adam(learning_rate=0.0002)
+    
+    model.compile(
+        loss=loss,
+        loss_weights=loss_weights,
+        optimizer=opt,
+        metrics=metrics,
+        run_eagerly=False
+    )
+
+    model.summary()
+
+    class Logger(tf.keras.callbacks.Callback):
+        def on_epoch_end(self, epoch, logs=None):
+            acc = []
+            for i in range(len(transformations)):
+                acc.append(logs.get('head_' + str(i + 1) + '_binary_accuracy'))
+            print('=' * 30, epoch + 1, '=' * 30)
+            print('Head accuracies:', [f'{a:.4f}' if a is not None else 'N/A' for a in acc])
+            print(f'Total loss: {logs.get("loss", 0):.4f}')
+            
+            avg_acc = np.mean([a for a in acc if a is not None])
+            if epoch > 10 and avg_acc < 0.65:
+                print(f"⚠️  WARNING: Average accuracy {avg_acc:.4f} is low after {epoch+1} epochs")
+
+    callback = tf.keras.callbacks.EarlyStopping(
+        monitor='loss', min_delta=0.005, patience=15, restore_best_weights=True
+    )
+    
+    callback_lr = tf.keras.callbacks.ReduceLROnPlateau(
+        monitor='loss', factor=0.5, patience=7, min_lr=1e-6, verbose=1
+    )
+
+    print("\nPreparing augmented data sequence...")
+    aug_sequence = AugmentedDataSequence(
+        base_generator, transformations, sigma_l,
+        ext=False, batches_per_epoch=batches_per_epoch
+    )
+
+    print(f"Cached batches: {len(aug_sequence.cached_batches)}")
+    print(f"Total batches per epoch: {len(aug_sequence)}")
+
+    print("\nStarting training with SIMPLE architecture and HEAVY regularization...")
+    print("This should prevent overfitting and allow steady improvement")
+    
+    history = model.fit(
+        aug_sequence,
+        epochs=50,
+        callbacks=[Logger(), callback, callback_lr],
+        verbose=1
+    )
+
+    # Check final accuracies
+    final_accs = [history.history[f'head_{i+1}_binary_accuracy'][-1] for i in range(len(transformations))]
+    avg_acc = np.mean(final_accs)
+    print(f"\n{'='*60}")
+    print(f"FINAL PRE-TRAINING ACCURACIES:")
+    for i, acc in enumerate(final_accs):
+        status = "✓" if acc > 0.75 else "⚠️" if acc > 0.65 else "✗"
+        print(f"  {status} head_{i+1}: {acc:.4f}")
+    print(f"\nAverage accuracy: {avg_acc:.4f}")
+    if avg_acc < 0.70:
+        print("⚠️  Pre-training accuracy is moderate")
+    else:
+        print("✓ Pre-training successful!")
+    print(f"{'='*60}\n")
+
+    fet_extrct = model.layers[len(transformations)]
+    print(f"Extracted feature extractor: {fet_extrct.name}")
+
+    del model, aug_sequence, base_generator
+    gc.collect()
+
+    # Visualize latent space
+    print("\nGenerating latent space visualization...")
+    viz_generator = EEGDataGenerator(
+        path, users[:20], train_sessions[:3], frame_size,
+        batch_size=32,
+        max_samples_per_session=2000,
+        mean=mean, std=std, shuffle=False
+    )
+
+    x_train_viz = []
+    y_train_viz = []
+    samples_collected = 0
+    max_samples = 1000
+
+    for batch_x, batch_y in viz_generator:
+        x_train_viz.append(batch_x)
+        y_train_viz.append(batch_y)
+        samples_collected += len(batch_x)
+        if samples_collected >= max_samples:
+            break
+
+    x_train_viz = np.concatenate(x_train_viz, axis=0)[:max_samples]
+    y_train_viz = np.concatenate(y_train_viz, axis=0)[:max_samples]
+
+    enc_results = fet_extrct.predict(x_train_viz, batch_size=32, verbose=0)
+    enc_results = np.array(enc_results)
+
+    if len(enc_results.shape) > 2:
+        enc_results = enc_results.reshape(enc_results.shape[0], -1)
+
+    enc_centered = enc_results - np.mean(enc_results, axis=0)
+    cov_matrix = np.cov(enc_centered.T)
+    eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+    idx = eigenvalues.argsort()[::-1]
+    eigenvectors = eigenvectors[:, idx]
+    X_embedded = enc_centered @ eigenvectors[:, :2].real
+
+    fig4 = plt.figure(figsize=(18, 12))
+    plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=y_train_viz, alpha=0.6, cmap='tab20')
+    plt.title(f'Latent Space (Simple Reg) - Avg Acc: {avg_acc:.3f}')
+    plt.xlabel('First Principal Component')
+    plt.ylabel('Second Principal Component')
+    plt.colorbar(label='User ID')
+    plt.savefig(os.path.join(graphs_dir, 'latentspace_scen_' + str(scen) + '.png'), 
+                dpi=150, bbox_inches='tight')
+    plt.close(fig4)
+
+    del x_train_viz, y_train_viz, enc_results, viz_generator
+    gc.collect()
+
+    print("\nPre-training complete!")
+    return fet_extrct

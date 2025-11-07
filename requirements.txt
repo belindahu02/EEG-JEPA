@@ -1,0 +1,62 @@
+dora-search
+
+# --------- pytorch --------- #
+lightning>=2.0.0
+torchmetrics>=0.11.4
+numpy>=1.20.3,<1.27
+torch>=2.0.0
+torchvision>=0.15.0
+lightning>=2.2.2
+tensorboard 
+torchaudio
+torchaudio>=2.0.0,<2.3.0
+nnAudio>=0.3.2
+tensorflow>=2.13.0
+
+# --------- conda-forge
+easydict
+fastrlock
+fire
+pandas
+retrying
+rich==14.0.0            # beautiful text formatting in terminal
+submitit
+scipy
+scikit-learn
+tabulate
+timm
+
+# numba
+numba
+
+#plotting
+matplotlib
+umap-learn
+seaborn 
+
+# --------- hydra --------- #
+hydra-core==1.3.2
+hydra-colorlog==1.2.0
+hydra-optuna-sweeper==1.2.0
+
+# --------- loggers --------- #
+wandb
+# neptune-client
+# mlflow
+# comet-ml
+# aim>=3.16.2  # no lower than 3.16.2, see https://github.com/aimhubio/aim/issues/2550
+
+# --------- others --------- #
+rootutils       # standardizing the project root setup
+pre-commit      # hooks for applying linters on commit
+pytest          # tests
+# sh            # for running bash commands in some tests (linux/macos only)
+
+# -------- pip
+
+treetable
+
+#------ data processing
+
+mne
+nnaudio

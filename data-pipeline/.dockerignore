@@ -1,0 +1,9 @@
+.git
+.venv/
+venv_eeg_lms/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+*.npy # Don't copy output data into the image itself
+data/ # If 'data' is your output directory

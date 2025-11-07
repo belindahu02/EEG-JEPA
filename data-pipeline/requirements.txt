@@ -1,0 +1,7 @@
+numpy
+mne
+torch
+fire
+tqdm
+nnaudio
+scipy
