@@ -1,7 +1,6 @@
 """
 Main script to run the MusicID masking experiment with Data Augmentation
 Tests model robustness by masking time series data in different patterns
-WITHOUT spectrograms - works directly with CSV sensor data
 """
 
 import sys

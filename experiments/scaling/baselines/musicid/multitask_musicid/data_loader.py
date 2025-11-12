@@ -4,7 +4,6 @@ import os
 from transformations import *
 
 def standardize(x):
-    """Manual standardization (z-score normalization)"""
     mean = np.mean(x, axis=0)
     std = np.std(x, axis=0)
     # Avoid division by zero
@@ -12,7 +11,6 @@ def standardize(x):
     return (x - mean) / std, mean, std
 
 def standardize_with_params(x, mean, std):
-    """Apply standardization using existing mean and std"""
     return (x - mean) / std
   
 def data_load_origin(path, users, folders, frame_size=30):

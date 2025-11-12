@@ -2,11 +2,9 @@ from plot_results import *
 import tensorflow as tf
 import os
 
-# Configure BOTH GPUs with memory growth and multi-GPU strategy
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
     try:
-        # Enable memory growth on ALL GPUs
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
         
@@ -22,9 +20,7 @@ if gpus:
 else:
     print("No GPU detected, using CPU")
 
-# Run experiments for different fine-tuning configurations
-# Start with ft=0 (full fine-tuning)
-for layers in [0]:  
+for layers in [0]:
     print(f"\n{'='*60}")
     print(f"Running experiments for ft={layers}")
     print(f"{'='*60}\n")
@@ -37,7 +33,6 @@ for layers in [0]:
         import traceback
         traceback.print_exc()
     finally:
-        # Aggressive cleanup
         tf.keras.backend.clear_session()
         gc.collect()
 

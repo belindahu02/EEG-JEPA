@@ -21,7 +21,6 @@ from datetime import datetime
 from trainers_cosine import spectrogram_trainer_2d
 from itertools import product
 
-# Set publication-quality plot defaults
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['font.size'] = 10
@@ -32,9 +31,7 @@ plt.rcParams['xtick.labelsize'] = 10
 plt.rcParams['ytick.labelsize'] = 10
 plt.rcParams['legend.fontsize'] = 10
 
-# =============================================
 # CONFIGURATION
-# =============================================
 
 DATA_PATH = "/app/data/grouped_embeddings_full"
 MODEL_PATH = "/app/data/experiments/ablation_final"
@@ -42,7 +39,6 @@ NORMALIZATION_METHOD = "log_scale"
 
 USER_IDS = list(range(1, 31))  # 30 users
 
-# Common parameters - NOW WITH REPRODUCIBILITY
 COMMON_PARAMS = {
     'data_path': DATA_PATH,
     'model_path': MODEL_PATH,
@@ -62,10 +58,6 @@ COMMON_PARAMS = {
 
 # Seeds for validation phase
 VALIDATION_SEEDS = [42, 123, 456]
-
-# =============================================
-# EXPERIMENT DESIGN
-# =============================================
 
 def create_main_experiment_set():
     """
@@ -94,7 +86,7 @@ def create_main_experiment_set():
     }
     experiments.append(baseline)
     
-    # ========== GROUP 2: ONE-AT-A-TIME (OAT) VARIATIONS ==========
+    #GROUP 2: ONE-AT-A-TIME VARIATIONS
     
     # Learning rate variations
     for lr in [0.0003, 0.003]:
@@ -112,7 +104,7 @@ def create_main_experiment_set():
             'params': {**baseline['params'], 'cosine_scale': scale}
         })
     
-    # Label smoothing variations - ONLY 0.1 now (0.2 showed high variance)
+    # Label smoothing variations
     experiments.append({
         'name': 'oat_smoothing_0_0',
         'description': 'OAT: Label Smoothing = 0.0',
@@ -141,7 +133,7 @@ def create_main_experiment_set():
         'params': {**baseline['params'], 'model_type': 'full'}
     })
     
-    # ========== GROUP 3: CRITICAL INTERACTIONS ==========
+    # GROUP 3: INTERACTIONS
     
     experiments.append({
         'name': 'interact_batch8_lr0003',
@@ -160,9 +152,7 @@ def create_main_experiment_set():
         'description': 'Full model + LR 0.003',
         'params': {**baseline['params'], 'model_type': 'full', 'lr': 0.003}
     })
-    
-    # REMOVED: scale64_smooth02 (smoothing 0.2 unstable)
-    
+
     experiments.append({
         'name': 'interact_nowarmup_lr0003',
         'description': 'No warmup + Low LR',
@@ -181,7 +171,7 @@ def create_main_experiment_set():
         'params': {**baseline['params'], 'model_type': 'full', 'batch_size': 8, 'lr': 0.0003}
     })
     
-    # ========== GROUP 4: EXTREME CONFIGURATIONS ==========
+    # GROUP 4: EXTREME CONFIGURATIONS
     
     experiments.append({
         'name': 'extreme_conservative',
@@ -191,7 +181,7 @@ def create_main_experiment_set():
             'batch_size': 16,
             'model_type': 'lightweight',
             'cosine_scale': 64.0,
-            'label_smoothing': 0.1,  # Changed from 0.2 to 0.1 (more stable)
+            'label_smoothing': 0.1,
             'warmup_epochs': 10,
         }
     })
@@ -222,9 +212,8 @@ def create_main_experiment_set():
         }
     })
     
-    # ========== GROUP 5: SCALE INTERACTIONS (NEW) ==========
-    # Test scale with full model
-    
+    # GROUP 5: SCALE INTERACTIONS
+
     experiments.append({
         'name': 'interact_full_scale20',
         'description': 'Full model + Scale 20',
@@ -273,11 +262,6 @@ def create_validation_experiments(main_results_df, top_n=5):
             })
     
     return validation_experiments
-
-
-# =============================================
-# EXPERIMENT RUNNER
-# =============================================
 
 def run_single_experiment(exp_name, exp_description, exp_params, results_dir, random_seed=None):
     """Run a single experiment and return results"""
@@ -340,7 +324,6 @@ def run_final_ablation_study():
     vis_dir = os.path.join(results_dir, 'visualizations')
     os.makedirs(vis_dir, exist_ok=True)
     
-    # ========== PHASE 1: MAIN EXPERIMENTS ==========
     print("="*80)
     print("PHASE 1: MAIN EXPERIMENTS")
     print("="*80)
@@ -374,7 +357,6 @@ def run_final_ablation_study():
     
     main_df = pd.DataFrame(main_results)
     
-    # ========== PHASE 2: VALIDATION EXPERIMENTS ==========
     print("\n" + "="*80)
     print("PHASE 2: VALIDATION OF TOP 5 CONFIGURATIONS")
     print("="*80)
@@ -407,7 +389,6 @@ def run_final_ablation_study():
     
     validation_df = pd.DataFrame(validation_results)
     
-    # ========== COMBINE AND ANALYZE ==========
     all_results = pd.concat([main_df, validation_df], ignore_index=True)
     all_results.to_csv(os.path.join(results_dir, 'all_results.csv'), index=False)
     
@@ -430,11 +411,6 @@ def run_final_ablation_study():
     generate_final_report(main_df, validation_df, results_dir)
     
     return main_df, validation_df
-
-
-# =============================================
-# VISUALIZATION FUNCTIONS
-# =============================================
 
 def plot_oat_analysis(df, save_dir):
     """Figure 1: One-at-a-time parameter effects"""
@@ -678,11 +654,6 @@ def plot_validation_results(validation_df, save_dir):
     plt.close()
     print(f"✓ Saved: fig6_validation.png/pdf")
 
-
-# =============================================
-# TABLE FUNCTIONS
-# =============================================
-
 def create_summary_table(df, save_dir):
     """Table 1: Summary statistics"""
     summary_data = []
@@ -790,11 +761,6 @@ def create_validated_configs_table(validation_df, save_dir):
     print(f"✓ Saved: table3_validated.csv/tex")
     return validated_df
 
-
-# =============================================
-# REPORT GENERATION
-# =============================================
-
 def generate_final_report(main_df, validation_df, results_dir):
     """Generate comprehensive final report"""
     lines = []
@@ -885,7 +851,7 @@ def generate_final_report(main_df, validation_df, results_dir):
     
     # Thesis recommendations
     lines.append("\n" + "="*80)
-    lines.append("RECOMMENDATIONS FOR THESIS")
+    lines.append("RECOMMENDATIONS")
     lines.append("="*80)
     
     # Find best validated config
@@ -903,7 +869,7 @@ def generate_final_report(main_df, validation_df, results_dir):
             best_validated_mean = mean
             best_validated_std = std
     
-    lines.append("\n1. RECOMMENDED CONFIGURATION FOR THESIS:")
+    lines.append("\n1. RECOMMENDED CONFIGURATION:")
     lines.append(f"   Configuration: {best_validated}")
     lines.append(f"   Performance: {best_validated_mean:.4f} ± {best_validated_std:.4f} Kappa")
     lines.append(f"   Reproducibility: {best_validated_std:.4f} std (across 3 seeds)")
@@ -917,12 +883,9 @@ def generate_final_report(main_df, validation_df, results_dir):
     lines.append(f"     - Cosine scale: {best_config_row['cosine_scale']}")
     lines.append(f"     - Label smoothing: {best_config_row['label_smoothing']}")
     lines.append(f"     - Warmup: {best_config_row['warmup_epochs']} epochs")
-    
-    lines.append("\n2. HOW TO REPORT IN THESIS:")
-    lines.append(f'   "We achieved {best_validated_mean:.4f} ± {best_validated_std:.4f} Cohen\'s Kappa')
-    lines.append(f'    (mean ± std across 3 random seeds) using the following configuration..."')
-    
-    lines.append("\n3. FIGURES TO INCLUDE:")
+
+
+    lines.append("\n3. FIGURES:")
     lines.append("   - Figure 1: OAT parameter sensitivity")
     lines.append("   - Figure 2: Model type comparison")
     lines.append("   - Figure 5: Overall ranking")
@@ -947,11 +910,6 @@ def generate_final_report(main_df, validation_df, results_dir):
     print(f"\n✓ Saved: final_report.txt")
     print("\n" + "\n".join(lines))
 
-
-# =============================================
-# MAIN
-# =============================================
-
 if __name__ == "__main__":
     import argparse
     
@@ -960,15 +918,6 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Final reproducible ablation study with validation phase.
-
-Changes from original:
-  - Uses constant LR scheduler (reproducible)
-  - Sets random seeds for all experiments
-  - Validates top 5 configs with 3 seeds each
-  - Reports mean ± std for validated configs
-
-Total experiments: ~23 main + 15 validation = ~38
-Estimated time: ~32 hours
         """
     )
     
@@ -1015,7 +964,7 @@ Estimated time: ~32 hours
     main_results, validation_results = run_final_ablation_study()
     
     print("\n" + "="*80)
-    print("✅ FINAL ABLATION STUDY COMPLETE!")
+    print(" FINAL ABLATION STUDY COMPLETE!")
     print("="*80)
     
     # Final summary
@@ -1031,12 +980,12 @@ Estimated time: ~32 hours
     
     if best_validated:
         config_data = validation_results[validation_results['base_config'] == best_validated]
-        print(f"\n🏆 BEST VALIDATED CONFIGURATION:")
+        print(f"\n BEST VALIDATED CONFIGURATION:")
         print(f"   {best_validated}")
         print(f"   Kappa: {config_data['kappa_score'].mean():.4f} ± {config_data['kappa_score'].std():.4f}")
         print(f"   (Mean ± Std across {len(VALIDATION_SEEDS)} seeds)")
     
-    print("\n📊 Output files:")
+    print("\n Output files:")
     print("  - final_report.txt: Complete analysis")
     print("  - fig6_validation.png: Validated results (USE THIS IN THESIS!)")
     print("  - table3_validated.csv: Mean±std for top configs")

@@ -14,7 +14,7 @@ def DA_Jitter(X, sigma=0.8):
 
 
 def DA_Scaling(X, sigma=0.1):
-    """Random scaling - OPTIMIZED"""
+    """Random scaling"""
     # Ensure X is numpy array
     if hasattr(X, 'numpy'):
         X = X.numpy()
@@ -23,7 +23,7 @@ def DA_Scaling(X, sigma=0.1):
 
 
 def GenerateRandomCurves(X, sigma=0.2, knot=4):
-    """Generate random curves for magnitude warping - OPTIMIZED"""
+    """Generate random curves for magnitude warping"""
     # Ensure X is numpy array
     if hasattr(X, 'numpy'):
         X = X.numpy()
@@ -40,7 +40,7 @@ def GenerateRandomCurves(X, sigma=0.2, knot=4):
 
 
 def DA_MagWarp(X, sigma=0.3):
-    """Magnitude warping - OPTIMIZED"""
+    """Magnitude warping"""
     # Ensure X is numpy array
     if hasattr(X, 'numpy'):
         X = X.numpy()
@@ -49,7 +49,7 @@ def DA_MagWarp(X, sigma=0.3):
 
 
 def DistortTimesteps(X, sigma=0.2):
-    """Distort timesteps for time warping - OPTIMIZED"""
+    """Distort timesteps for time warping"""
     # Ensure X is numpy array
     if hasattr(X, 'numpy'):
         X = X.numpy()
@@ -64,7 +64,7 @@ def DistortTimesteps(X, sigma=0.2):
 
 
 def DA_TimeWarp(X, sigma=0.2):
-    """Time warping - OPTIMIZED"""
+    """Time warping"""
     # Ensure X is numpy array
     if hasattr(X, 'numpy'):
         X = X.numpy()
@@ -141,7 +141,7 @@ def DA_Combined(X, nPerm=4, minSegLength=10, sigma=0):
 
 
 def DA_Negation(X, sigma=0):
-    """Negation augmentation - OPTIMIZED"""
+    """Negation augmentation"""
     # Ensure X is numpy array
     if hasattr(X, 'numpy'):
         X = X.numpy()

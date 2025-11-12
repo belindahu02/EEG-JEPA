@@ -1,7 +1,3 @@
-# =============================================
-# Enhanced trainers_2d.py with Memory-Efficient Loading
-# =============================================
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -215,9 +211,6 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
                            max_cache_size=100):
     """
     Memory-efficient PyTorch 2D spectrogram trainer.
-
-    NEW PARAMETERS:
-        max_cache_size: Maximum number of spectrograms to keep in memory cache (default: 100)
     """
     if device is None:
         if torch.cuda.is_available():
@@ -254,9 +247,7 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
     else:
         logger = setup_logging("./logs_2d")
 
-    # --------------------------
     # Create memory-efficient data loaders
-    # --------------------------
     logger.info("Creating memory-efficient data loaders...")
     start_time = time.time()
 
@@ -313,10 +304,6 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
     logger.info(f"Number of classes: {num_classes}")
     logger.info(f"Spectrogram dimensions: {input_shape[1:]} (height x width)")
 
-    # Convert to PyTorch tensors - THIS IS NO LONGER NEEDED since the dataset handles it
-    # The data loaders already return tensors
-
-    # Create DataLoaders - ALREADY DONE ABOVE
     # Update settings for memory efficiency
     train_loader = DataLoader(
         train_loader.dataset,
@@ -345,9 +332,7 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
     logger.info(f"Using augmentation: {use_augmentation}")
     logger.info(f"Cache size: {max_cache_size}")
 
-    # --------------------------
     # Build model
-    # --------------------------
     input_channels = input_shape[0]  # Should be 1 for grayscale spectrograms
 
     if model_type == 'lightweight':
@@ -377,9 +362,7 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
     logger.info(f"Total parameters: {total_params:,}")
     logger.info(f"Trainable parameters: {trainable_params:,}")
 
-    # --------------------------
     # Training setup
-    # --------------------------
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss()
 
@@ -448,9 +431,7 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
             for old_checkpoint in checkpoints[:-3]:
                 os.remove(os.path.join(run_checkpoint_dir, old_checkpoint))
 
-    # --------------------------
     # Training loop with memory management
-    # --------------------------
     logger.info(f"Starting training for {epochs} epochs...")
     logger.info(f"Early stopping patience: {early_stopping_patience}")
 
@@ -642,9 +623,7 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
         final_plot_path = os.path.join(run_checkpoint_dir, 'final_training_curves.png')
         plot_training_curves(training_history, final_plot_path)
 
-    # --------------------------
     # Load best model and evaluate
-    # --------------------------
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
         logger.info("Loaded best model for final evaluation")
@@ -724,9 +703,8 @@ def spectrogram_trainer_2d(samples_per_user, data_path, train_data_path, test_da
             json.dump(final_results, f, indent=2)
 
         logger.info(f"2D Training completed. All files saved to: {run_checkpoint_dir}")
-    # --------------------------
+
     # Confusion Matrices (Train + Test)
-    # --------------------------
     logger.info("Generating confusion matrices...")
 
     # --- Training confusion matrix ---

@@ -1,7 +1,3 @@
-# =============================================
-# Enhanced trainers_2d.py with Session-Based Splitting (No Data Leakage)
-# =============================================
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -74,7 +70,7 @@ def plot_training_curves(history, save_path):
     axes[0, 1].grid(True, alpha=0.3)
     axes[0, 1].legend()
 
-    # Learning Rate (if available)
+    # Learning Rate
     if 'learning_rate' in history:
         axes[1, 0].plot(history['learning_rate'], 'g-', label='Learning Rate')
         axes[1, 0].set_title('Learning Rate Schedule')
@@ -84,7 +80,7 @@ def plot_training_curves(history, save_path):
         axes[1, 0].legend()
         axes[1, 0].set_yscale('log')
 
-    # Validation Loss (if available)
+    # Validation Loss
     if 'val_loss' in history:
         axes[1, 1].plot(history['train_loss'], 'b-', label='Training Loss')
         axes[1, 1].plot(history['val_loss'], 'r-', label='Validation Loss')
@@ -144,11 +140,11 @@ def get_memory_usage():
         memory_mb = process.memory_info().rss / 1024 / 1024
         return memory_mb / 1024  # Convert to GB
     except ImportError:
-        return 0.0  # Return 0 if psutil not available
+        return 0.0
 
 
 def save_confusion_matrix_torch(y_true, y_pred, num_classes, save_path, class_names=None):
-    # Initialize confusion matrix
+    # Initialise confusion matrix
     cm = torch.zeros(num_classes, num_classes, dtype=torch.int64)
 
     for t, p in zip(y_true, y_pred):
@@ -212,11 +208,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
                            use_augmentation=False, save_model_checkpoints=True, checkpoint_every=10,
                            max_cache_size=100):
     """
-    Session-based PyTorch 2D spectrogram trainer (NO DATA LEAKAGE).
-
-    UPDATED: Now uses session-based splitting to avoid data leakage.
-    - samples_per_user parameter is ignored (uses all samples with session-based split)
-    - Uses 10 sessions for training, 2 for validation, 2 for testing per user
+    Session-based PyTorch 2D spectrogram trainer.
     """
     if device is None:
         if torch.cuda.is_available():
@@ -251,10 +243,8 @@ def spectrogram_trainer_2d(data_path, user_ids,
         logger.info(f"Starting 2D training run: {run_id}")
         logger.info(f"Model checkpoints will be saved to: {run_checkpoint_dir}")
 
-    # --------------------------
-    # Create session-based data loaders (NO DATA LEAKAGE)
-    # --------------------------
-    logger.info("Creating session-based data loaders (NO DATA LEAKAGE)...")
+    # Create session-based data loaders
+    logger.info("Creating session-based data loaders...")
     logger.info("Split strategy: 10 sessions train, 2 sessions val, 2 sessions test per user")
     start_time = time.time()
 
@@ -329,10 +319,8 @@ def spectrogram_trainer_2d(data_path, user_ids,
     logger.info(f"Cache size: {max_cache_size}")
     logger.info(f"User IDs included: {user_ids[:5]}...{user_ids[-5:] if len(user_ids) > 5 else user_ids}")
 
-    # --------------------------
     # Build model
-    # --------------------------
-    input_channels = input_shape[0]  # Should be 1 for grayscale spectrograms
+    input_channels = input_shape[0]
 
     if model_type == 'lightweight':
         model = LightweightSpectrogramResNet(
@@ -361,9 +349,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     logger.info(f"Total parameters: {total_params:,}")
     logger.info(f"Trainable parameters: {trainable_params:,}")
 
-    # --------------------------
     # Training setup
-    # --------------------------
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     criterion = nn.CrossEntropyLoss()
 
@@ -434,9 +420,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
             for old_checkpoint in checkpoints[:-3]:
                 os.remove(os.path.join(run_checkpoint_dir, old_checkpoint))
 
-    # --------------------------
     # Training loop with memory management
-    # --------------------------
     logger.info(f"Starting session-based training for {epochs} epochs...")
     logger.info(f"Early stopping patience: {early_stopping_patience}")
 
@@ -465,7 +449,6 @@ def spectrogram_trainer_2d(data_path, user_ids,
                 with torch.cuda.amp.autocast():
                     outputs = model(xb)
                     loss = criterion(outputs, yb)
-            # --- Add this for monitoring collapse ---
                     probs = F.softmax(outputs, dim=1)
                     if batch_idx % 50 == 0:  # log every 50 batches to avoid spamming
                         logger.info(f"Batch {batch_idx}: mean probs {probs.mean(dim=0)}")
@@ -635,9 +618,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
         final_plot_path = os.path.join(run_checkpoint_dir, 'final_training_curves.png')
         plot_training_curves(training_history, final_plot_path)
 
-    # --------------------------
     # Load best model and evaluate
-    # --------------------------
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
         logger.info("Loaded best model for final evaluation")
@@ -722,12 +703,10 @@ def spectrogram_trainer_2d(data_path, user_ids,
 
         logger.info(f"Session-based 2D Training completed. All files saved to: {run_checkpoint_dir}")
 
-    # --------------------------
     # Confusion Matrices (Train + Test)
-    # --------------------------
     logger.info("Generating confusion matrices...")
 
-    # --- Training confusion matrix ---
+    # Training confusion matrix
     all_train_preds, all_train_labels = [], []
     model.eval()
     with torch.no_grad():
@@ -748,7 +727,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     )
     logger.info(f"Saved training confusion matrix to {train_cm_path}")
 
-    # --- Test confusion matrix ---
+    # Test confusion matrix
     all_test_preds, all_test_labels = [], []
     with torch.no_grad():
         for inputs, labels in test_loader:

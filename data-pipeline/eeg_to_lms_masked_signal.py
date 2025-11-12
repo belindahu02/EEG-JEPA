@@ -6,14 +6,6 @@ Each frame is saved as a separate .npy file.
 
 Added feature: Random masking of signal blocks before spectrogram conversion for
 robustness testing.
-
-The conversion includes the following processes:
-    - Multi-channel EEG processing (saves each channel separately)
-    - Resampling to target sampling rate
-    - Random masking (optional) - zeros out random blocks in the signal
-    - Converting to a log-mel spectrogram with same dimensions as audio converter
-    - Segmenting into 20s frames with 10s overlap
-
 Example:
     python eeg_to_lms.py /your/eeg/data /your/eeg_lms_output
 

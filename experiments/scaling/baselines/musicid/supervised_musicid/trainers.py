@@ -10,9 +10,6 @@ from backbones import *
 from data_loader import *
 
 def cohen_kappa_score(y_true, y_pred, num_classes):
-    """
-    Calculate Cohen's Kappa score manually
-    """
     # Convert predictions to class labels if needed
     if len(y_pred.shape) > 1:
         y_pred = np.argmax(y_pred, axis=1)
@@ -44,7 +41,7 @@ def trainer(num_classes):
   
   # Select only the specified number of users (classes)
   all_users = list(range(1,21)) #All users for dataset 2
-  users_to_use = all_users[:num_classes]  # Select first num_classes users
+  users_to_use = all_users[:num_classes]
   print(f"Using {num_classes} classes (users): {users_to_use}")
   
 #  users_1 = list(range(1,7)) #Users for dataset 1
@@ -55,18 +52,18 @@ def trainer(num_classes):
   x_train, y_train, sessions_train = data_load_origin(path, users=users_to_use, folders=folder_train, frame_size=30)
   print("training samples : ", x_train.shape[0])
   
-  # Debug: Check if data exists
-  if x_train.shape[0] == 0:
-    print(f"WARNING: No training data loaded for users {users_to_use}")
-    print(f"Expected path format: {path}/TrainingSet/user#_fav_session#.csv")
-    print(f"Checking if directory exists: {os.path.exists(os.path.join(path, folder_train[0]))}")
-    # Try to list what's actually in the directory
-    train_dir = os.path.join(path, folder_train[0])
-    if os.path.exists(train_dir):
-      files = os.listdir(train_dir)
-      print(f"Files in {train_dir}: {files[:10] if len(files) > 10 else files}")  # Show first 10 files
-    else:
-      print(f"Directory does not exist: {train_dir}")
+  # # Debug: Check if data exists
+  # if x_train.shape[0] == 0:
+  #   print(f"WARNING: No training data loaded for users {users_to_use}")
+  #   print(f"Expected path format: {path}/TrainingSet/user#_fav_session#.csv")
+  #   print(f"Checking if directory exists: {os.path.exists(os.path.join(path, folder_train[0]))}")
+  #   # Try to list what's actually in the directory
+  #   train_dir = os.path.join(path, folder_train[0])
+  #   if os.path.exists(train_dir):
+  #     files = os.listdir(train_dir)
+  #     print(f"Files in {train_dir}: {files[:10] if len(files) > 10 else files}")  # Show first 10 files
+  #   else:
+  #     print(f"Directory does not exist: {train_dir}")
   
   x_val, y_val, sessions_val = data_load_origin(path, users=users_to_use, folders=folder_val, frame_size=30)
   print("validation samples : ", x_val.shape[0])

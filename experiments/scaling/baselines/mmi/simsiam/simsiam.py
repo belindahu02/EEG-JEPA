@@ -12,7 +12,7 @@ from tensorflow.keras.optimizers import schedules
 from tensorflow.keras.layers import Flatten
 
 def get_encoder(frame_size,ftr,mlp_s,origin):
-    # Input and backbone.
+    # Input and backbone
     ks = 3
     con = 3
     inputs = layers.Input((frame_size,ftr))
@@ -41,15 +41,10 @@ def get_predictor(mlp_s, origin):
     
 
 def compute_loss(p, z):
-    # The authors of SimSiam emphasize the impact of
-    # the `stop_gradient` operator in the paper as it
-    # has an important role in the overall optimization.
     z = tf.stop_gradient(z)
     p = tf.math.l2_normalize(p, axis=1)
     z = tf.math.l2_normalize(z, axis=1)
     #print(p.shape,z.shape)
-    # Negative cosine similarity (minimizing this is
-    # equivalent to maximizing the similarity).
     return -tf.reduce_mean(tf.reduce_sum((p * z), axis=1))
 
 class Contrastive(tf.keras.Model):
@@ -64,20 +59,17 @@ class Contrastive(tf.keras.Model):
         return [self.loss_tracker]
 
     def train_step(self, data):
-        # Unpack the data.
         ds_one, ds_two = data
 
-        # Forward pass through the encoder and predictor.
+        # Forward pass through the encoder and predictor
         with tf.GradientTape() as tape:
             z1, z2 = self.encoder(ds_one), self.encoder(ds_two)
             p1, p2 = self.predictor(z1), self.predictor(z2)
-            # Note that here we are enforcing the network to match
-            # the representations of two differently augmented batches
-            # of data.
+
             #loss = compute_loss(p1, GaussianNoise(stddev=5)(z2)) / 2 + compute_loss(p2, GaussianNoise(stddev=5)(z1)) / 2
             loss = compute_loss(p1, z2) / 2 + compute_loss(p2, z1) / 2
 
-        # Compute gradients and update the parameters.
+        # Compute gradients and update the parameters
         learnable_params = (
             self.encoder.trainable_variables + self.predictor.trainable_variables
         )

@@ -38,7 +38,6 @@ MODEL_TYPE = 'full'  # Options: 'lightweight', 'full'
 
 variable_name = "number of users"
 model_name = f"spectrogram_2d_{NORMALIZATION_METHOD}_{MODEL_TYPE}_users"
-# Changed to test different numbers of users instead of samples per user
 user_counts = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 109]
 
 # Checkpoint file names
@@ -67,7 +66,6 @@ def save_checkpoint(current_idx, current_itr, acc, kappa, experiment_start_time)
     with open(checkpoint_file, 'w') as f:
         json.dump(checkpoint_data, f, indent=2)
 
-    # Save results backup using pickle to handle variable-length sublists
     if acc and kappa:
         import pickle
         backup_data = {
@@ -134,7 +132,6 @@ def save_intermediate_results(acc, kappa, current_idx):
 
     print(f"Saving intermediate results: {valid_acc_count} valid accuracy runs, {valid_kappa_count} valid kappa runs")
 
-    # Save using pickle to handle variable lengths and empty sublists
     intermediate_file = os.path.join(OUTPUT_PATH, f"{model_name}_intermediate.pkl")
     import pickle
 
@@ -188,12 +185,12 @@ def create_plots(acc, kappa, num_completed, suffix=""):
             if has_valid_acc:
                 acc_max.append(np.max(acc[i]))
             else:
-                acc_max.append(np.nan)  # Use NaN for missing data
+                acc_max.append(np.nan)
 
             if has_valid_kappa:
                 kappa_max.append(np.max(kappa[i]))
             else:
-                kappa_max.append(np.nan)  # Use NaN for missing data
+                kappa_max.append(np.nan)
 
     if len(valid_user_counts) == 0:
         print("Warning: No valid data points available for plotting")
@@ -212,7 +209,6 @@ def create_plots(acc, kappa, num_completed, suffix=""):
     plt.grid(True, alpha=0.3)
     plt.legend()
 
-    # Add text showing number of valid points
     valid_kappa_count = np.sum(~np.isnan(kappa_max))
     plt.text(0.02, 0.98, f'Valid points: {valid_kappa_count}/{len(valid_user_counts)}',
              transform=plt.gca().transAxes, verticalalignment='top',
@@ -233,7 +229,6 @@ def create_plots(acc, kappa, num_completed, suffix=""):
     plt.grid(True, alpha=0.3)
     plt.legend()
 
-    # Add text showing number of valid points
     valid_acc_count = np.sum(~np.isnan(acc_max))
     plt.text(0.02, 0.98, f'Valid points: {valid_acc_count}/{len(valid_user_counts)}',
              transform=plt.gca().transAxes, verticalalignment='top',
@@ -304,7 +299,7 @@ try:
                     model_type=MODEL_TYPE,
                     epochs=50,
                     batch_size=8,
-                    lr=0.0003,  # Consider reducing to 0.0003 or 0.0005
+                    lr=0.0003,
                     use_augmentation=False,
                     device='cuda',
                     save_model_checkpoints=True,

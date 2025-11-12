@@ -54,9 +54,7 @@ def trainer(num_classes, fet_extrct, ft):
   all_users = list(range(1,21))
   users_to_use = all_users[:num_classes]
   print(f"Fine-tuning with {num_classes} classes (users): {users_to_use}")
-  
-  ######################################################Transfering##########################################################################################
-  
+
   folder_train = ["TrainingSet"]
   folder_val = ["TestingSet"]
   folder_test = ["TestingSet_secret"]
@@ -87,7 +85,7 @@ def trainer(num_classes, fet_extrct, ft):
   print("x_val", x_val.shape)
   print("x_test", x_test.shape)
   
-  # Use all available samples instead of limiting
+  # Use all available samples
   print("Using all available training samples : ", x_train.shape[0])
   classes, counts  = np.unique(y_train, return_counts=True)
   print("samples per class:", counts)

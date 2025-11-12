@@ -4,11 +4,8 @@ import matplotlib.pyplot as plt
 import json
 import os
 
-# Base output directory on host
 base_dir = "/app/data/experiments/scaling/baselines"
-# base_dir = "test/"
 
-# Make sure these exist
 graph_data_dir = os.path.join(base_dir, "da/graph_data")
 graphs_dir = os.path.join(base_dir, "da/graphs")
 checkpoint_dir = os.path.join(base_dir, "da/checkpoints")
@@ -21,10 +18,8 @@ variable_name = "number of users"
 model_name = "eeg_mmi_user_scaling_da"
 iterations = 1
 
-# Variable is now number of users instead of samples per user
 variable = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 109]
 
-# Checkpoint file paths
 checkpoint_file = os.path.join(checkpoint_dir, f"{model_name}_checkpoint.json")
 results_file = os.path.join(checkpoint_dir, f"{model_name}_results.npz")
 
@@ -54,7 +49,6 @@ def save_checkpoint(num_users, iteration, acc, kappa):
     with open(checkpoint_file, 'w') as f:
         json.dump(checkpoint, f)
 
-    # Save results - use dtype=object for ragged arrays
     np.savez(
         results_file,
         test_acc=np.array(acc, dtype=object),
@@ -81,11 +75,9 @@ def should_skip(num_users, iteration, checkpoint):
     last_users = checkpoint['last_num_users']
     last_iter = checkpoint['last_iteration']
 
-    # Skip if we've completed this user count
     if num_users < last_users:
         return True
 
-    # Skip if we're on the same user count but this iteration is already done
     if num_users == last_users and iteration <= last_iter:
         return True
 
@@ -94,7 +86,6 @@ def should_skip(num_users, iteration, checkpoint):
 
 def plot_results(acc, kappa, completed_users):
     """Generate all plots with current results"""
-    # Convert to proper arrays, handling ragged lists
     acc_array = []
     kappa_array = []
     
@@ -102,7 +93,6 @@ def plot_results(acc, kappa, completed_users):
         acc_array.append(acc[i])
         kappa_array.append(kappa[i])
     
-    # Convert each sublist to array for statistics
     acc_max = []
     acc_mean = []
     acc_std = []
@@ -206,7 +196,6 @@ for num_users in variable:
     print(f"{'=' * 70}\n")
 
     for itr in range(iterations):
-        # Skip if already completed
         if should_skip(num_users, itr, checkpoint):
             print(f"Skipping iteration {itr + 1}/{iterations} for {num_users} users (already completed)")
             continue
@@ -219,13 +208,10 @@ for num_users in variable:
             kappa_temp.append(kappa_score)
             print(f"Iteration {itr + 1} - Acc: {test_acc:.4f}, Kappa: {kappa_score:.4f}")
 
-            # Save checkpoint after each iteration
             if len(acc) == variable.index(num_users):
-                # First iteration for this user count
                 acc.append(acc_temp.copy())
                 kappa.append(kappa_temp.copy())
             else:
-                # Additional iterations
                 acc[variable.index(num_users)] = acc_temp.copy()
                 kappa[variable.index(num_users)] = kappa_temp.copy()
 
@@ -240,7 +226,6 @@ for num_users in variable:
             print(f"{'!' * 70}\n")
             raise
 
-    # After completing all iterations for this user count
     if len(acc_temp) == iterations:
         print(f"\nCompleted {num_users} users - Avg Acc: {np.mean(acc_temp):.4f}, Avg Kappa: {np.mean(kappa_temp):.4f}")
 

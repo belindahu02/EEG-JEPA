@@ -7,17 +7,6 @@ from data_loader import *
 
 
 def cohen_kappa(y_true, y_pred, num_classes):
-    """
-    Calculate Cohen's Kappa score manually.
-
-    Args:
-        y_true: Ground truth labels
-        y_pred: Predicted labels (probabilities)
-        num_classes: Number of classes
-
-    Returns:
-        kappa: Cohen's Kappa score
-    """
     # Convert predictions to class labels
     y_pred_labels = np.argmax(y_pred, axis=1)
 

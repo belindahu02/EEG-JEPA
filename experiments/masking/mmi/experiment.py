@@ -1,8 +1,6 @@
 """
 Main script to run the EEG masking experiment
 Integrates all components: masking, preprocessing, training, and evaluation
-WITH CHECKPOINT SUPPORT FOR RESUMING FROM INTERRUPTIONS
-UPDATED: Now uses same hyperparameters and model configuration as scaling experiment
 """
 
 import sys
@@ -143,7 +141,6 @@ class EEGMaskingExperiment:
         print(f"Input shape: {input_shape}")
         print(f"Number of classes: {num_classes}")
 
-        # UPDATED: Initialize model to match scaling experiment (full model instead of lightweight)
         model = SpectrogramResNet(
             input_channels=input_shape[0],
             num_classes=num_classes,
@@ -152,7 +149,6 @@ class EEGMaskingExperiment:
             classifier_dropout=self.config.get('classifier_dropout', 0.0)
         )
 
-        # UPDATED: Initialize trainer with cosine classifier and advanced training techniques
         trainer = MaskingExperimentTrainer(
             model, 
             device=device,
@@ -170,7 +166,6 @@ class EEGMaskingExperiment:
         print(f"  - Warmup epochs: {self.config.get('warmup_epochs', 5)}")
         print(f"  - Weight decay: {self.config.get('weight_decay', 1e-4)}")
         
-        # UPDATED: Train with weight decay parameter
         best_val_acc = trainer.train_model(
             train_loader=train_loader,
             val_loader=val_loader,
@@ -258,7 +253,6 @@ class EEGMaskingExperiment:
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        # UPDATED: Load trained model with same configuration as training
         num_classes = len(self.config['user_ids'])
         model = SpectrogramResNet(
             input_channels=1,
@@ -268,7 +262,6 @@ class EEGMaskingExperiment:
             classifier_dropout=self.config.get('classifier_dropout', 0.0)
         )
 
-        # UPDATED: Initialize trainer with same configuration as training
         trainer = MaskingExperimentTrainer(
             model, 
             device=device,
@@ -281,7 +274,7 @@ class EEGMaskingExperiment:
 
         print(f"Loaded trained model from: {self.base_model_path}")
 
-        # Initialize or load existing results
+        # Initialise or load existing results
         if resume_state:
             accuracy_matrix, kappa_matrix, detailed_results = resume_state
             completed_combinations = {(r['masking_percentage'], r['num_blocks']) for r in detailed_results}
@@ -558,16 +551,12 @@ class EEGMaskingExperiment:
                 return [convert_numpy(x) for x in obj]
             return obj
 
-        # -----------------------------
         # Save as JSON
-        # -----------------------------
         json_path = self.results_dir / "experiment_results.json"
         with open(json_path, 'w') as f:
             json.dump(convert_numpy(results_data), f, indent=2)
 
-        # -----------------------------
         # Save as pickle
-        # -----------------------------
         import pickle
         pickle_path = self.results_dir / "experiment_results.pkl"
         with open(pickle_path, 'wb') as f:
@@ -587,9 +576,7 @@ class EEGMaskingExperiment:
             num_blocks_range=np.array(self.num_blocks_range)
         )
 
-        # -----------------------------
         # Print saved paths
-        # -----------------------------
         print(f"Results saved to:")
         print(f"  JSON: {json_path}")
         print(f"  Pickle: {pickle_path}")
@@ -867,11 +854,11 @@ def main():
 
     # Experiment configuration
     config = {
-        # Paths (adjust for your environment)
+        # Paths
         'experiment_dir': '/app/data/experiments/masking_full_doublecheck',
         'raw_eeg_dir': '/app/data/1.0.0',
 
-        # Pre-trained model paths - CRITICAL: Set these to your actual paths
+        # Pre-trained model paths
         'model_checkpoint_path': '/app/data/jepa_logs_full/last.ckpt',
         'model_config_path': '/app/configs',  # Directory containing train.yaml (REQUIRED)
 
@@ -887,14 +874,14 @@ def main():
         'val_sessions': [11, 12],              # Sessions 11-12 for validation
         'test_sessions': [13, 14],             # Sessions 13-14 for testing
 
-        # Training parameters - UPDATED to match scaling experiment
+        # Training parameters
         'train_epochs': 50,
         'batch_size': 16,
         'learning_rate': 0.0003,
         'eval_runs_per_variant': 3,
         'weight_decay': 1e-4,
 
-        # Advanced training parameters - NEW from scaling experiment
+        # Advanced training parameters
         'use_cosine_classifier': True,
         'cosine_scale': 40.0,
         'label_smoothing': 0.1,
@@ -902,7 +889,7 @@ def main():
         'dropout_rate': 0.2,
         'classifier_dropout': 0.0,
 
-        # Model parameters - UPDATED to match scaling experiment
+        # Model parameters
         'model_type': 'full',
         'input_channels': 1,
         'num_mel_bins': 80,

@@ -5,10 +5,6 @@ import gc
 
 @tf.function
 def tf_augment_fast(x):
-    """
-    Fast TensorFlow-native augmentation (Scaling + Jitter + Drop).
-    All operations run on GPU - no Python calls!
-    """
     # 1. Scaling: multiply by random factor
     scale_factor = tf.random.normal([1, tf.shape(x)[1]], mean=1.0, stddev=0.55, dtype=tf.float32)
     x = x * scale_factor
@@ -29,16 +25,7 @@ def tf_augment_fast(x):
 
 def create_tf_dataset(file_list, frame_size, mean, std, batch_size=8, 
                       shuffle=True, augment=False, augmentation_fn=None):
-    """
-    Hybrid approach: Pre-load original data, apply fast TF augmentation on-the-fly.
-    
-    Memory usage:
-    - Pre-loads ALL original data (normalized)
-    - Does NOT pre-compute augmented versions
-    - Applies augmentation during training (GPU-accelerated)
-    
-    This uses ~50% less memory than pre-loading augmented versions.
-    """
+
     from data_loader import load_edf_session
     
     # Create sample index mapping
@@ -71,7 +58,7 @@ def create_tf_dataset(file_list, frame_size, mean, std, batch_size=8,
             print(f"  Loaded {file_idx + 1}/{len(file_list)} files")
             gc.collect()  # Clean up during loading
     
-    print(f"All files loaded! (Augmentation will be applied on-the-fly during training)")
+    print(f"All files loaded, augmentation will be applied on-the-fly during training")
     
     def generator():
         """Generator function that yields samples"""
@@ -84,7 +71,7 @@ def create_tf_dataset(file_list, frame_size, mean, std, batch_size=8,
             window_idx = window_indices[idx]
             user_id = user_ids[idx]
             
-            # Get from pre-loaded cache (fast!)
+            # Get from pre-loaded cache
             X = file_data_cache[file_idx][window_idx]
             y = user_id
             
@@ -99,8 +86,7 @@ def create_tf_dataset(file_list, frame_size, mean, std, batch_size=8,
             tf.TensorSpec(shape=(), dtype=tf.int32)
         )
     )
-    
-    # Apply fast TensorFlow augmentation if requested (50% of samples)
+
     if augment:
         dataset = dataset.map(
             lambda x, y: (

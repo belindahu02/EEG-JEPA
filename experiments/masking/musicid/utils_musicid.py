@@ -1,7 +1,5 @@
 """
 MusicID utilities with CSV-to-spectrogram conversion
-CORRECTED: Handles flat directory structure with augmented files
-Filename format: userX_TYPE_sessionY[_aug_ZZZ].csv
 """
 
 import numpy as np

@@ -6,7 +6,6 @@ Tests 13 focused strategies to close the train-val-test gap:
 - Weight decay variations (2 experiments)
 - Combined approaches (7 experiments)
 
-IMPORTANT: Requires backbones_with_dropout.py as backbones.py
 """
 
 import os
@@ -16,10 +15,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 from trainers_cosine import spectrogram_trainer_2d
-
-# =============================================
-# CONFIGURATION
-# =============================================
 
 DATA_PATH = "/app/data/grouped_embeddings_full"
 MODEL_PATH = "/app/data/experiments/overfitting_reduction"

@@ -133,7 +133,7 @@ def save_intermediate_results(acc, kappa, current_idx):
     """Save intermediate results that can be plotted, handling failed runs"""
     # Check if we have any data at all
     if len(acc) == 0 and len(kappa) == 0:
-        print("⚠️ No data to save yet (acc and kappa are both empty)")
+        print("No data to save yet (acc and kappa are both empty)")
         return
 
     # Ensure we have at least some valid data
@@ -141,7 +141,7 @@ def save_intermediate_results(acc, kappa, current_idx):
     valid_kappa_count = sum(1 for sublist in kappa if len(sublist) > 0)
 
     if valid_acc_count == 0 and valid_kappa_count == 0:
-        print("⚠️ No valid runs completed yet (all sublists are empty)")
+        print("No valid runs completed yet (all sublists are empty)")
         return
 
     print(f"💾 Saving intermediate results: {valid_acc_count} valid accuracy runs, {valid_kappa_count} valid kappa runs")
@@ -163,22 +163,22 @@ def save_intermediate_results(acc, kappa, current_idx):
     try:
         with open(intermediate_file, 'wb') as f:
             pickle.dump(intermediate_data, f)
-        print(f"✅ Intermediate data saved to {intermediate_file}")
+        print(f"Intermediate data saved to {intermediate_file}")
     except Exception as e:
-        print(f"❌ Failed to save intermediate data: {e}")
+        print(f"Failed to save intermediate data: {e}")
         return
 
     # Create intermediate plots only if we have valid data
     try:
         create_plots(acc, kappa, current_idx, suffix="_intermediate")
-        print(f"✅ Intermediate plots created")
+        print(f"Intermediate plots created")
     except Exception as e:
-        print(f"⚠️ Could not create intermediate plots: {e}")
+        print(f"Could not create intermediate plots: {e}")
 
 def create_plots(acc, kappa, num_completed, suffix=""):
     """Create plots with current results, handling empty sublists from failed runs"""
     if len(acc) == 0 and len(kappa) == 0:
-        print("⚠️ No data available for plotting")
+        print("No data available for plotting")
         return
 
     current_variables = variable[:num_completed]
@@ -207,7 +207,7 @@ def create_plots(acc, kappa, num_completed, suffix=""):
                 kappa_max.append(np.nan)  # Use NaN for missing data
 
     if len(valid_variables) == 0:
-        print("⚠️ No valid data points available for plotting")
+        print("No valid data points available for plotting")
         return
 
     print(f"📊 Plotting {len(valid_variables)} data points (some may have NaN values)")
@@ -253,7 +253,7 @@ def create_plots(acc, kappa, num_completed, suffix=""):
     plt.savefig(output_graph, dpi=300, bbox_inches='tight')
     plt.close()
 
-    print(f"✅ Plots saved with {valid_acc_count} valid accuracy points and {valid_kappa_count} valid kappa points")
+    print(f"Plots saved with {valid_acc_count} valid accuracy points and {valid_kappa_count} valid kappa points")
 
 def compare_with_1d_results(acc, kappa):
     """Create comparison plots with 1D PCA results if available"""
@@ -310,10 +310,10 @@ def compare_with_1d_results(acc, kappa):
                 plt.savefig(comparison_file, dpi=300, bbox_inches='tight')
                 plt.close()
 
-                print(f"✅ Comparison plot saved to {comparison_file}")
+                print(f"Comparison plot saved to {comparison_file}")
 
                 # Print numerical comparison
-                print(f"\n📊 Performance Comparison (last {min_len} data points):")
+                print(f"\nPerformance Comparison (last {min_len} data points):")
                 avg_acc_2d = np.mean(acc_max[:min_len])
                 avg_acc_1d = np.mean(pca_acc_max[:min_len])
                 avg_kappa_2d = np.mean(kappa_max[:min_len])
@@ -325,7 +325,7 @@ def compare_with_1d_results(acc, kappa):
                     f"Improvement      - Acc: {(avg_acc_2d - avg_acc_1d) * 100:.2f}%, Kappa: {(avg_kappa_2d - avg_kappa_1d) * 100:.2f}%")
 
     except Exception as e:
-        print(f"⚠️ Could not create comparison plots: {e}")
+        print(f"Could not create comparison plots: {e}")
 
 
 # Main execution
@@ -398,7 +398,7 @@ try:
                 kappa_temp.append(kappa_score)
 
                 run_time = time.time() - run_start_time
-                print(f"✅ Run {itr + 1} completed in {run_time:.1f}s")
+                print(f"Run {itr + 1} completed in {run_time:.1f}s")
                 print(f"   Test Accuracy: {test_acc:.4f}")
                 print(f"   Kappa Score: {kappa_score:.4f}")
 
@@ -413,7 +413,7 @@ try:
                 save_checkpoint(i, itr + 1, acc, kappa, experiment_start_time)
 
             except Exception as e:
-                print(f"❌ Error in run {itr + 1}: {e}")
+                print(f"Error in run {itr + 1}: {e}")
                 print(f"   Continuing with next run...")
                 # Save checkpoint even on error
                 save_checkpoint(i, itr, acc, kappa, experiment_start_time)
@@ -435,15 +435,15 @@ try:
             avg_kappa = np.mean(kappa_temp)
             std_kappa = np.std(kappa_temp)
 
-            print(f"\n📊 Summary for {samples_per_user} samples/user:")
+            print(f"\nSummary for {samples_per_user} samples/user:")
             print(f"   Accuracy: {avg_acc:.4f} ± {std_acc:.4f} (n={len(acc_temp)})")
             print(f"   Kappa:    {avg_kappa:.4f} ± {std_kappa:.4f} (n={len(kappa_temp)})")
 
             save_intermediate_results(acc, kappa, i + 1)
-            print(f"💾 Intermediate results saved and plotted")
+            print(f"Intermediate results saved and plotted")
 
         else:
-            print(f"⚠️ No successful runs for {samples_per_user} samples/user")
+            print(f"No successful runs for {samples_per_user} samples/user")
 
         # Final checkpoint for this sample size
         save_checkpoint(i + 1, 0, acc, kappa, experiment_start_time)
@@ -454,14 +454,14 @@ try:
             avg_time_per_sample = elapsed_time / (i - start_idx + 1)
             remaining_samples = len(variable) - i - 1
             est_remaining_time = remaining_samples * avg_time_per_sample
-            print(f"⏱️ Estimated remaining time: {est_remaining_time / 3600:.1f} hours")
+            print(f"Estimated remaining time: {est_remaining_time / 3600:.1f} hours")
 
 except KeyboardInterrupt:
-    print("\n\n🛑 Experiment interrupted by user. Saving current progress...")
+    print("\n\nExperiment interrupted by user. Saving current progress...")
     save_intermediate_results(acc, kappa, len(acc))
 
 except Exception as e:
-    print(f"\n\n💥 Unexpected error: {e}")
+    print(f"\n\nUnexpected error: {e}")
     print("Saving current progress...")
     save_intermediate_results(acc, kappa, len(acc))
     raise
@@ -525,30 +525,30 @@ if len(acc) > len(variable):
                      kappa_score=kappa_padded,
                      variables=np.array(variable[:len(acc)]),
                      max_runs_per_sample=max_length)
-            print(f"✅ Results saved to both {pickle_file} and {output_file}")
+            print(f"Results saved to both {pickle_file} and {output_file}")
             print(f"Padded array shapes: acc={acc_padded.shape}, kappa={kappa_padded.shape}")
         else:
-            print(f"✅ Results saved to {pickle_file}")
+            print(f"Results saved to {pickle_file}")
     except Exception as e:
-        print(f"⚠️ Could not save .npz format: {e}")
-        print(f"✅ Results saved to {pickle_file}")
+        print(f"Could not save .npz format: {e}")
+        print(f"Results saved to {pickle_file}")
 
     # Create final plots
     try:
         create_plots(acc, kappa, len(acc))
         print(
-            f"✅ Final plots saved as graphs/acc_2d_{NORMALIZATION_METHOD}_{MODEL_TYPE}.jpg and graphs/kappa_2d_{NORMALIZATION_METHOD}_{MODEL_TYPE}.jpg")
+            f"Final plots saved as graphs/acc_2d_{NORMALIZATION_METHOD}_{MODEL_TYPE}.jpg and graphs/kappa_2d_{NORMALIZATION_METHOD}_{MODEL_TYPE}.jpg")
     except Exception as e:
-        print(f"⚠️ Could not create final plots: {e}")
+        print(f"Could not create final plots: {e}")
 
     # Create comparison plots with 1D results if available
     try:
         compare_with_1d_results(acc, kappa)
     except Exception as e:
-        print(f"⚠️ Could not create comparison plots: {e}")
+        print(f"Could not create comparison plots: {e}")
 
     # Print final summary statistics
-    print(f"\n📈 FINAL EXPERIMENT SUMMARY - 2D SPECTROGRAMS")
+    print(f"\nFINAL EXPERIMENT SUMMARY - 2D SPECTROGRAMS")
     print(f"{'=' * 60}")
     print(f"Model: {MODEL_TYPE} with {NORMALIZATION_METHOD} normalization")
     print(f"Users: {len(USER_IDS)}, Epochs per run: 100")

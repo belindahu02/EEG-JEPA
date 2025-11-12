@@ -4,7 +4,7 @@ This program converts EEG .edf files found in the source folder to log-mel spect
 then creates 20-second frames with 10-second overlap from each channel's spectrogram.
 Each frame is saved as a separate .npy file.
 
-Added feature: Random masking of signal blocks per frame before spectrogram conversion for
+Adds random masking of signal blocks per frame before spectrogram conversion for
 robustness testing.
 
 Workflow per channel:

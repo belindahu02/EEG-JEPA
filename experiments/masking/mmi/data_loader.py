@@ -1,7 +1,6 @@
 """
-Specialized data loader for masking experiment with proper session-based splitting
+Specialised data loader for masking experiment with proper session-based splitting
 Handles training on sessions 1-10, validation on 11-12, and testing on 13-14
-UPDATED: Now uses cosine classifier and advanced training techniques from scaling experiment
 """
 
 import torch
@@ -208,10 +207,7 @@ def create_masking_experiment_dataloaders(data_dir, user_ids, batch_size=16):
 
     return train_loader, val_loader, test_loader
 
-
-# =============================================
-# NEW: Cosine Classifier Head (from trainers_cosine.py)
-# =============================================
+# cosine classifier head
 class CosineClassifier(nn.Module):
     """
     Cosine similarity-based classifier head.
@@ -242,9 +238,7 @@ class CosineClassifier(nn.Module):
         return logits * self.scale
 
 
-# =============================================
-# NEW: Label Smoothing Loss (from trainers_cosine.py)
-# =============================================
+# label smoothing
 class LabelSmoothingCrossEntropy(nn.Module):
     """
     Cross entropy loss with label smoothing.
@@ -272,9 +266,7 @@ class LabelSmoothingCrossEntropy(nn.Module):
         return torch.mean(torch.sum(-true_dist * log_probs, dim=1))
 
 
-# =============================================
-# NEW: Warmup Scheduler (from trainers_cosine.py)
-# =============================================
+# warmup scheduler
 class WarmupScheduler:
     """
     Linear warmup followed by another scheduler.
@@ -303,9 +295,6 @@ class WarmupScheduler:
         return [group['lr'] for group in self.optimizer.param_groups]
 
 
-# =============================================
-# NEW: Model Wrapper with Cosine Classifier
-# =============================================
 class ModelWithCosineClassifier(nn.Module):
     """
     Wraps backbone and replaces final layer with cosine classifier.

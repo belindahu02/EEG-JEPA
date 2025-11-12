@@ -20,7 +20,6 @@ for num_classes in variable:
 acc = np.array(acc)
 kappa = np.array(kappa)
 
-# Create output directory if it doesn't exist
 output_dir = "/app/data/musicid_supervised_baseline"
 os.makedirs(output_dir, exist_ok=True)
 os.makedirs(os.path.join(output_dir, "graph_data"), exist_ok=True)

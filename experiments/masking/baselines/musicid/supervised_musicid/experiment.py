@@ -1,7 +1,5 @@
 """
 Main script to run the musicid masking experiment for supervised learning
-Matches the structure of experiment_new.py but works with CSV data directly
-No spectrograms needed - uses raw sensor data from musicid dataset
 """
 
 import sys
@@ -40,7 +38,7 @@ class MusicIDMaskingExperiment:
         for d in [self.models_dir, self.results_dir, self.plots_dir]:
             d.mkdir(exist_ok=True)
 
-        # Masking parameter grid - EXACTLY matching experiment_new.py
+        # Masking parameter grid
         self.masking_percentages = np.arange(0, 55, 5)  # 0%, 5%, 10%, ..., 50%
         self.num_blocks_range = [1, 2, 3, 4, 5]
 
@@ -60,8 +58,7 @@ class MusicIDMaskingExperiment:
     def mask_data(self, x_data, masking_percentage, num_blocks):
         """
         Apply masking to the data
-        Matches the masking strategy from experiment_new.py
-        
+
         Args:
             x_data: Input data of shape (n_samples, time_steps, features)
             masking_percentage: Percentage of data to mask (0-100)
@@ -609,7 +606,7 @@ def main():
     print(f"Experiment directory: {config['experiment_dir']}")
     print("=" * 60)
 
-    # Initialize and run experiment
+    # Initialise and run experiment
     experiment = MusicIDMaskingExperiment(config)
 
     results = experiment.run_complete_experiment()

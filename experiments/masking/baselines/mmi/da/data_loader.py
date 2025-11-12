@@ -4,14 +4,15 @@ import mne
 import gc
 import tensorflow as tf
 
+# Legacy functions
 
 def data_load_origin(path, users, folders, frame_size=30):
-    """Legacy function - not used with EEG MMI dataset"""
+    """Legacy function"""
     pass
 
 
 def norma_origin(x_all):
-    """Legacy function - kept for compatibility"""
+    """Legacy function"""
     x = np.reshape(x_all, (x_all.shape[0] * x_all.shape[1], x_all.shape[2]))
     mean = np.mean(x, axis=0)
     std = np.std(x, axis=0)
@@ -22,7 +23,7 @@ def norma_origin(x_all):
 
 
 def user_data_split(x, y, samples_per_user):
-    """Legacy function - kept for compatibility"""
+    """Legacy function"""
     users, counts = np.unique(y, return_counts=True)
     x_train = np.array([])
     y_train = np.array([])

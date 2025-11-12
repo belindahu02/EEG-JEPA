@@ -2,10 +2,8 @@ from trainers import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Base output directory on host
 base_dir = "/app/data/experiments/scaling/baselines"
 
-# Make sure these exist
 graph_data_dir = os.path.join(base_dir, "supervised/graph_data")
 graphs_dir = os.path.join(base_dir, "supervised/graphs")
 
@@ -15,7 +13,6 @@ os.makedirs(graphs_dir, exist_ok=True)
 variable_name = "number of users"
 model_name = "eeg_mmi_user_scaling"
 
-# Test with increasing numbers of users: 10, 20, 30, ..., 100, 109
 variable = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 109]
 
 acc = []

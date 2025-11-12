@@ -1,7 +1,3 @@
- # =============================================
-# FIXED trainers_cosine.py with Class-Balanced Loss
-# =============================================
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,10 +17,7 @@ from sklearn.metrics import cohen_kappa_score, confusion_matrix
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.enabled = True
 
-
-# =============================================
-# Class-Balanced Loss (CRITICAL FIX)
-# =============================================
+# Class-Balanced Loss
 class ClassBalancedLoss(nn.Module):
     """Handles severe class imbalance"""
     def __init__(self, num_classes, samples_per_class, beta=0.9999, smoothing=0.1):
@@ -62,10 +55,7 @@ class ClassBalancedLoss(nn.Module):
         
         return loss.mean()
 
-
-# =============================================
 # Cosine Classifier
-# =============================================
 class CosineClassifier(nn.Module):
     def __init__(self, in_features, num_classes, scale=30.0):
         super().__init__()
@@ -81,10 +71,7 @@ class CosineClassifier(nn.Module):
         logits = F.linear(x_norm, w_norm)
         return logits * self.scale
 
-
-# =============================================
 # Warmup Scheduler
-# =============================================
 class WarmupScheduler:
     def __init__(self, optimizer, warmup_epochs, base_scheduler=None):
         self.optimizer = optimizer
@@ -144,7 +131,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
                            dropout_rate=0.2, classifier_dropout=0.3, weight_decay=1e-4,
                            test_sessions_per_user=1, val_sessions_per_user=1):
     """
-    FIXED trainer with class-balanced loss for imbalanced data
+    Trainer with class-balanced loss for imbalanced data
     """
 
     if random_seed is not None:
@@ -177,9 +164,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
         logger = logging.getLogger(__name__)
         logging.basicConfig(level=logging.INFO)
 
-    # --------------------------
     # Create data loaders
-    # --------------------------
     logger.info("Creating session-based data loaders...")
     start_time = time.time()
 
@@ -201,9 +186,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     data_load_time = time.time() - start_time
     logger.info(f"Data loader creation completed in {data_load_time:.2f}s")
 
-    # --------------------------
-    # CRITICAL: Analyze class distribution
-    # --------------------------
+    # Analyze class distribution
     logger.info("\n" + "="*80)
     logger.info("ANALYZING CLASS DISTRIBUTION")
     logger.info("="*80)
@@ -235,9 +218,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     logger.info(f"Input shape: {input_shape}")
     logger.info(f"Number of classes (users): {num_classes}")
 
-    # --------------------------
     # Create model
-    # --------------------------
     if model_type == 'lightweight':
         model = LightweightSpectrogramResNet(
             input_channels=1,
@@ -272,9 +253,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     logger.info(f"Total parameters: {total_params:,}")
     logger.info(f"Trainable parameters: {trainable_params:,}")
 
-    # --------------------------
-    # CRITICAL: Use Class-Balanced Loss
-    # --------------------------
+    # Use Class-Balanced Loss
     criterion = ClassBalancedLoss(
         num_classes=num_classes,
         samples_per_class=samples_per_class,

@@ -1,7 +1,3 @@
-# =============================================
-# FIXED data_loader_2d_lazy.py - Session-based Splitting (No Data Leakage)
-# =============================================
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 import os
@@ -57,15 +53,14 @@ class SpectrogramDataset(Dataset):
 
             # Check if data appears pre-normalized (mean~0, std~1)
             if abs(avg_mean) < 0.1 and 0.5 < avg_std < 2.0:
-                print("✅ Data appears to be PRE-NORMALIZED")
+                print(" Data appears to be PRE-NORMALISED")
                 if self.normalization != 'none':
                     print(
-                        f"⚠️  WARNING: You requested '{self.normalization}' normalization on already normalized data!")
-                    print("   This will cause double normalization and gradient explosion.")
-                    print("   Switching to 'none' normalization...")
+                        f"  WARNING: You requested '{self.normalization}' normalization on already normalised data")
+                    print("   Switching to 'none' normalisation...")
                     self.normalization = 'none'
             else:
-                print("Data appears to need normalization")
+                print("Data appears to need normalisation")
 
     def __len__(self):
         return len(self.file_paths)
@@ -111,9 +106,6 @@ class SpectrogramDataset(Dataset):
         return torch.tensor(spec, dtype=torch.float32), torch.tensor(label, dtype=torch.long)
 
     def _normalize_single(self, spec, method):
-        """
-        SAFE normalization methods that won't cause gradient explosion
-        """
         if method == 'none':
             return spec
 
@@ -122,7 +114,7 @@ class SpectrogramDataset(Dataset):
             return np.clip(spec, -5.0, 5.0)
 
         elif method == 'robust_scale':
-            # Use percentiles instead of min/max for robustness
+            # Use percentiles instead of min/max
             p5 = np.percentile(spec, 5)
             p95 = np.percentile(spec, 95)
             if p95 - p5 > 1e-8:
@@ -140,9 +132,9 @@ class SpectrogramDataset(Dataset):
                 result = (spec - mean) / std
                 return np.clip(result, -3.0, 3.0)  # Gentle clipping
 
-        # AVOID log_scale, decibel, or any extreme transformations on pre-normalized data
         return spec
 
+    # Not used - augmentation applied to raw spectrograms instead
     def _augment_single(self, spec):
 
         """
@@ -151,9 +143,7 @@ class SpectrogramDataset(Dataset):
         """
         # Apply augmentation with 80% probability
         if np.random.rand() > 0.5:
-            # Handle different input shapes
             if spec.ndim == 3:  # (channel, time, freq)
-                # Reshape to (time, freq*channel) for augmentation
                 channels = spec.shape[0]
                 time_steps = spec.shape[1]
                 freq_bins = spec.shape[2]
@@ -164,15 +154,15 @@ class SpectrogramDataset(Dataset):
                 # Apply augmentations
                 augmented = spec_reshaped.copy()
                 
-                # Random Scaling (50% chance)
+                # Random Scaling
                 if np.random.rand() > 0.5:
                     augmented = DA_Scaling(augmented, sigma=0.15)
                 
-                # Magnitude Warping (frequency warping) (50% chance)
+                # Magnitude Warping (frequency warping)
                 if np.random.rand() > 0.5:
                     augmented = DA_MagWarp(augmented, sigma=0.2)
                 
-                # Time Warping (optional, 30% chance) - helps with temporal variations
+                # Time Warping
                 if np.random.rand() > 0.7:
                     augmented = DA_TimeWarp(augmented, sigma=0.15)
                 
@@ -194,7 +184,7 @@ class SpectrogramDataset(Dataset):
                 if np.random.rand() > 0.5:
                     augmented = DA_MagWarp(augmented, sigma=0.2)
                 
-                # Time Warping (optional, 30% chance)
+                # Time Warping (30% chance)
                 if np.random.rand() > 0.7:
                     augmented = DA_TimeWarp(augmented, sigma=0.15)
                 
@@ -301,7 +291,6 @@ def create_session_based_splits(user_session_data, user_ids):
                 val_sessions = available_sessions[-4:-2]
                 test_sessions = available_sessions[-2:]
             else:
-                # Very few sessions - put most in training
                 train_sessions = available_sessions[:-2] if len(available_sessions) > 2 else available_sessions[:1]
                 val_sessions = [available_sessions[-2]] if len(available_sessions) > 1 else []
                 test_sessions = [available_sessions[-1]] if len(available_sessions) > 0 else []
@@ -345,9 +334,8 @@ def create_session_based_splits(user_session_data, user_ids):
 
     if missing_classes:
         print(f"ERROR: Missing classes in training set: {missing_classes}")
-        print("This will cause training to fail!")
 
-        # Emergency fix: move some samples from val/test to train for missing classes
+        # Move some samples from val/test to train for missing classes
         for missing_class in missing_classes:
             # Try to find this class in val first
             val_indices = [i for i, label in enumerate(val_labels) if label == missing_class]
@@ -463,8 +451,6 @@ def test_session_based_loader(data_path, user_ids_subset):
     # Test data isolation
     print("Verifying session-based data isolation...")
 
-    # This is a basic sanity check - in practice, you'd need to verify
-    # that the actual session directories are properly separated
     sample_train = next(iter(train_loader))
     sample_val = next(iter(val_loader))
     sample_test = next(iter(test_loader))
@@ -473,7 +459,7 @@ def test_session_based_loader(data_path, user_ids_subset):
     print(f"Val sample shape: {sample_val[0].shape}, labels: {torch.unique(sample_val[1])}")
     print(f"Test sample shape: {sample_test[0].shape}, labels: {torch.unique(sample_test[1])}")
 
-    print("✅ Session-based data loader test completed successfully!")
+    print(" Session-based data loader test completed successfully!")
     return True
 
 

@@ -43,6 +43,6 @@ for subj in subject_dirs:
     total_bad += subj_bad_count
     print(f"[DONE] {subj}: {subj_file_count} files checked, {subj_bad_count} issues found.")
 
-print(f"\n✅ Total files checked: {total_files}")
-print(f"❌ Total problematic files: {total_bad}")
+print(f"\n Total files checked: {total_files}")
+print(f" Total problematic files: {total_bad}")
 

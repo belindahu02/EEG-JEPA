@@ -7,7 +7,6 @@ from tensorflow.keras import layers
 import gc
 import os
 
-# Disable XLA at the start of this module
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices=false'
 tf.config.optimizer.set_jit(False)
 
@@ -16,7 +15,6 @@ from data_loader import *
 
 base_dir = "/app/data/experiments/baselines"
 
-# Make sure these exist
 graph_data_dir = os.path.join(base_dir, "multi_task/graph_data")
 graphs_dir = os.path.join(base_dir, "multi_task/graphs")
 
@@ -73,8 +71,6 @@ class AugmentedDataSequence(tf.keras.utils.Sequence):
         combined_data = combined_data[shuffle_idx]
         combined_labels = combined_labels[shuffle_idx]
         
-        # CRITICAL FIX: Return single input (not dict of inputs!)
-        # Build y_dict and sample_weight_dict for multiple heads
         y_dict = {}
         sample_weight_dict = {}
         
@@ -88,7 +84,6 @@ class AugmentedDataSequence(tf.keras.utils.Sequence):
                 y_dict[f"head_{i + 1}"] = np.zeros(batch_size, dtype=np.float32)
                 sample_weight_dict[f"head_{i + 1}"] = np.zeros(batch_size, dtype=np.float32)
 
-        # Return single input array (not dict!)
         return combined_data, y_dict, sample_weight_dict
 
     def on_epoch_end(self):
@@ -106,7 +101,6 @@ def pre_trainer(scen):
     frame_size = 40
     path = "/app/data/1.0.0"
     
-    # CRITICAL: Very small batch size to avoid cuDNN memory issues
     batch_size_per_replica = 4  # 2 per GPU = 4 total on 2 GPUs
     batch_size = batch_size_per_replica * strategy.num_replicas_in_sync
 
@@ -120,23 +114,23 @@ def pre_trainer(scen):
     print(f"Effective batch size: {batch_size}")
     print(f"{'='*60}\n")
 
-    # Compute normalization WITHOUT sample limits
+    # Compute normalization without sample limits
     print("Computing normalization statistics from ALL training data...")
     mean, std = compute_normalization_stats(
         path, users=users, sessions=train_sessions,
-        frame_size=frame_size, max_samples_per_session=None  # USE ALL DATA
+        frame_size=frame_size, max_samples_per_session=None
     )
 
     print("Creating data generator with NO sample limits...")
     base_generator = EEGDataGenerator(
         path, users, train_sessions, frame_size,
-        batch_size=batch_size_per_replica,  # Batch per replica
-        max_samples_per_session=None,  # USE ALL DATA
+        batch_size=batch_size_per_replica,
+        max_samples_per_session=None,
         mean=mean, std=std, shuffle=True
     )
 
     steps_per_epoch = base_generator.get_steps_per_epoch()
-    batches_per_epoch = min(steps_per_epoch, 300)  # More batches since we have all data
+    batches_per_epoch = min(steps_per_epoch, 300)
     print(f"Steps per epoch: {steps_per_epoch}")
     print(f"Using {batches_per_epoch} batches per epoch")
 
@@ -144,20 +138,18 @@ def pre_trainer(scen):
     n_channels = first_batch_x.shape[-1]
     print(f"Data shape: (batch_size={batch_size_per_replica}, {frame_size}, {n_channels})")
 
-    # REQUESTED AUGMENTATIONS: Scaling, MagWarp, TimeWarp, Negation
     transformations = [
         DA_Scaling,      # Random Scaling
         DA_MagWarp,      # Magnitude Warping
         DA_TimeWarp,     # Time Warping
         DA_Negation      # Negation
     ]
-    sigma_l = [1.0, 1.5, 1.0, None]  # DOUBLED - was [0.5, 0.5, 0.2, None]
+    sigma_l = [1.0, 1.5, 1.0, None]
 
     print(f"\nAugmentations: {[t.__name__ for t in transformations]}")
     print(f"Sigma values: {sigma_l}")
 
-    # Optimized architecture for memory efficiency
-    con = 3  # Reduced from 4 to save memory
+    con = 3
     ks = 3
 
     def trunk():
@@ -167,7 +159,7 @@ def pre_trainer(scen):
         """
         input_ = Input(shape=(frame_size, n_channels), name='input_')
         
-        # Initial conv with SMALLER pooling
+        # Initial conv with smaller pooling
         x = Conv1D(filters=20 * con, kernel_size=ks, strides=1, padding='same')(input_)
         x = BatchNormalization()(x)
         x = ReLU()(x)
@@ -185,7 +177,6 @@ def pre_trainer(scen):
 
     # Build model within strategy scope for multi-GPU
     with strategy.scope():
-        # CRITICAL FIX: Single shared input (not multiple inputs!)
         input_ = Input(shape=(frame_size, n_channels), name='input')
         
         trunk_model = trunk()
@@ -194,19 +185,16 @@ def pre_trainer(scen):
         # Get shared features from trunk
         features = trunk_model(input_)
 
-        # SIMPLER classification heads to reduce memory
         heads = []
         for i in range(len(transformations)):
             head_name = 'head_' + str(i + 1)
             
-            # Simplified: 128 → 1 (removed one layer)
-            x = Dense(128, activation='relu', 
+            x = Dense(128, activation='relu',
                      kernel_regularizer=tf.keras.regularizers.l2(0.001))(features)
             x = Dropout(0.5)(x)
             head = Dense(1, activation='sigmoid', name=head_name, dtype='float32')(x)
             heads.append(head)
 
-        # CRITICAL: Single input, multiple outputs
         model = tf.keras.models.Model(input_, heads, name='multi-task_self-supervised')
 
         # Compile
@@ -239,7 +227,7 @@ def pre_trainer(scen):
             
             avg_acc = np.mean([a for a in acc if a is not None])
             if epoch > 15 and avg_acc < 0.70:
-                print(f"⚠️  WARNING: Average accuracy {avg_acc:.4f} is low after {epoch+1} epochs")
+                print(f"️  WARNING: Average accuracy {avg_acc:.4f} is low after {epoch+1} epochs")
 
     callback = tf.keras.callbacks.EarlyStopping(
         monitor='loss', min_delta=0.003, patience=20, restore_best_weights=True
@@ -278,7 +266,7 @@ def pre_trainer(scen):
         print(f"  {status} {transform.__name__}: {acc:.4f}")
     print(f"\nAverage accuracy: {avg_acc:.4f}")
     if avg_acc < 0.70:
-        print("⚠️  Pre-training accuracy is moderate")
+        print("⚠  Pre-training accuracy is moderate")
     else:
         print("✓ Pre-training successful!")
     print(f"{'='*60}\n")
@@ -342,5 +330,4 @@ def pre_trainer(scen):
 
     print("\nPre-training complete!")
     
-    # CRITICAL: Return BOTH the feature extractor AND the strategy
     return fet_extrct, strategy

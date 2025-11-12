@@ -10,9 +10,6 @@ from backbones import *
 from data_loader import *
 
 def cohen_kappa_score(y_true, y_pred, num_classes):
-    """
-    Calculate Cohen's Kappa score manually
-    """
     # Convert predictions to class labels if needed
     if len(y_pred.shape) > 1:
         y_pred = np.argmax(y_pred, axis=1)

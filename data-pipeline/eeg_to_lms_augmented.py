@@ -1,22 +1,11 @@
 """
-EEG to log-mel spectrogram (LMS) converter with 20s frames, 10s overlap, and on-the-fly augmentation.
-This program converts EEG .edf files from the PhysioNet Motor Movement/Imagery Dataset 
+Converts EEG .edf files from the PhysioNet Motor Movement/Imagery Dataset
 to log-mel spectrograms, then creates 20-second frames with 10-second overlap from each 
 channel's spectrogram. Each frame is saved as a separate .npy file.
 
-RESUME CAPABILITY:
-This version supports resuming interrupted runs. It checks the existing files_audioset.csv
-and output folders to determine what has already been processed, and continues from where
-it left off. The most recent file is reprocessed to ensure completeness.
-
-ON-THE-FLY AUGMENTATION:
-Instead of creating multiple augmented copies of the data, this version applies
-frequency wrapping and amplitude scaling during the conversion process. This means
-each channel is randomly augmented without storing duplicate files.
-
 The conversion includes the following processes:
     - Multi-channel EEG processing (saves each channel separately)
-    - **ON-THE-FLY AUGMENTATION** (frequency wrapping + amplitude scaling)
+    - Augmentation (frequency wrapping + amplitude scaling)
     - Resampling to target sampling rate
     - Converting to a log-mel spectrogram with same dimensions as audio converter
     - Segmenting into 20s frames with 10s overlap

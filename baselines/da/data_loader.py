@@ -4,7 +4,6 @@ import os
 import mne
 import warnings
 
-# Suppress MNE warnings for cleaner output
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 def apply_masking(data, frame_size, num_masks=2):

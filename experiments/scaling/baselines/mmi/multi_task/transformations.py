@@ -26,7 +26,7 @@ def DA_MagWarp(X, sigma = 0.5):
     return X * GenerateRandomCurves(X, sigma)
 
 def DistortTimesteps(X, sigma=0.2):
-    tt = GenerateRandomCurves(X, sigma) # Regard these samples aroun 1 as time intervals
+    tt = GenerateRandomCurves(X, sigma) # Regard these samples around 1 as time intervals
     tt_cum = np.cumsum(tt, axis=0)        # Add intervals to make a cumulative graph
     # Make the last value to have X.shape[0]
     t_scale = [(X.shape[0]-1)/tt_cum[-1,i] for i in range(X.shape[1])]
@@ -66,15 +66,10 @@ def DA_Permutation(X, nPerm=4, minSegLength=10, sigma=0):
     return(X_new)
 
 def RandSampleTimesteps(X, nSample):
-    """
-    Generate random sample timesteps for interpolation.
-    
-    CRITICAL: Must generate DIFFERENT random points each time to create variation.
-    """
     tt = np.zeros((nSample, X.shape[1]), dtype=int)
     
     for i in range(X.shape[1]):
-        # Generate unique random sample points (no duplicates)
+        # Generate unique random sample points
         # Sample from interior points only, always include endpoints
         if nSample <= 2:
             tt[:, i] = [0, X.shape[0] - 1]
@@ -96,17 +91,6 @@ def RandSampleTimesteps(X, nSample):
     return tt
 
 def DA_RandSampling(X, nSample=None, sigma=0):
-    """
-    Random sampling augmentation - undersample signal at random points and interpolate back.
-    
-    For short signals (like 40 timesteps), we need to use a small number of sample points
-    to create noticeable distortion through interpolation.
-    
-    Args:
-        X: Input signal of shape (timesteps, channels)
-        nSample: Number of sample points to use (if None, defaults to 15)
-        sigma: Unused, kept for API compatibility
-    """
     # Use a fixed small number of samples for noticeable effect on short signals
     if nSample is None:
         nSample = 15  # Fixed value that creates noticeable distortion for 40-step signals

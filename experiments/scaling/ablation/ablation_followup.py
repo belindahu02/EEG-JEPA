@@ -1,6 +1,4 @@
 """
-Follow-up Ablation Study: Finding the True Optimal Configuration
-
 Based on the initial ablation results, this script tests:
 1. Best individual parameters combined
 2. Variations around the current best configuration
@@ -18,18 +16,13 @@ from datetime import datetime
 from trainers_cosine import spectrogram_trainer_2d
 from itertools import product
 
-# Set publication-quality plot defaults
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['font.size'] = 10
 plt.rcParams['font.family'] = 'serif'
 
-# =============================================
-# CONFIGURATION
-# =============================================
-
-DATA_PATH = "/app/data/grouped_embeddings_full"  # UPDATE THIS
-MODEL_PATH = "/app/data/experiments/ablation_full"  # UPDATE THIS
+DATA_PATH = "/app/data/grouped_embeddings_full"
+MODEL_PATH = "/app/data/experiments/ablation_full"
 NORMALIZATION_METHOD = "log_scale"
 
 USER_IDS = list(range(1, 31))  # 30 users
@@ -49,11 +42,6 @@ COMMON_PARAMS = {
     'use_cosine_classifier': True,
 }
 
-
-# =============================================
-# FOLLOW-UP EXPERIMENTS
-# =============================================
-
 def create_followup_experiments():
     """
     Create top 10 follow-up experiments based on initial ablation results.
@@ -72,7 +60,7 @@ def create_followup_experiments():
 
     experiments = []
 
-    # ========== GROUP 1: REFERENCE POINTS (2 experiments) ==========
+    # GROUP 1: REFERENCE POINTS (2 experiments)
 
     # Current best from initial study
     experiments.append({
@@ -102,8 +90,7 @@ def create_followup_experiments():
         }
     })
 
-    # ========== GROUP 2: BEST INDIVIDUAL WITH ADJUSTED LR (2 experiments) ==========
-    # LR 0.003 might be too high when combined with other aggressive settings
+    # GROUP 2: BEST INDIVIDUAL WITH ADJUSTED LR (2 experiments)
 
     base_best_individual = {
         'model_type': 'full',
@@ -126,7 +113,7 @@ def create_followup_experiments():
         'params': {**base_best_individual, 'lr': 0.0003}
     })
 
-    # ========== GROUP 3: CURRENT BEST WITH INDIVIDUAL IMPROVEMENTS (4 experiments) ==========
+    # GROUP 3: CURRENT BEST WITH INDIVIDUAL IMPROVEMENTS (4 experiments)
     # Test if we can improve current best by swapping in best individual params one at a time
 
     base_current_best = {
@@ -162,7 +149,7 @@ def create_followup_experiments():
         'params': {**base_current_best, 'batch_size': 8}
     })
 
-    # ========== GROUP 4: COMBINED IMPROVEMENTS (2 experiments) ==========
+    # GROUP 4: COMBINED IMPROVEMENTS (2 experiments)
     # Test if multiple improvements work together
 
     experiments.append({
@@ -178,11 +165,6 @@ def create_followup_experiments():
     })
 
     return experiments
-
-
-# =============================================
-# EXPERIMENT RUNNER
-# =============================================
 
 def run_single_experiment(exp_name, exp_description, exp_params, results_dir):
     """Run a single experiment and return results"""
@@ -284,11 +266,6 @@ def run_followup_study():
     generate_followup_report(results_df, results_dir)
 
     return results_df
-
-
-# =============================================
-# VISUALIZATION FUNCTIONS
-# =============================================
 
 def plot_comparison_chart(df, save_dir):
     """Compare key configurations"""
@@ -553,11 +530,6 @@ def generate_followup_report(df, results_dir):
     print(f"\n✓ Saved: followup_report.txt")
     print("\n" + "\n".join(lines))
 
-
-# =============================================
-# MAIN
-# =============================================
-
 if __name__ == "__main__":
     import argparse
 
@@ -571,8 +543,6 @@ gives better results than the current best configuration.
 Based on initial results:
 - Current best: Full model, LR 0.0003, batch 16, scale 40 (Kappa: 0.8339)
 - Best individual params: Full model, LR 0.003, batch 8, scale 20
-
-This script runs ~26 experiments to find the true optimal configuration.
         """
     )
 
@@ -599,7 +569,7 @@ This script runs ~26 experiments to find the true optimal configuration.
         COMMON_PARAMS['epochs'] = args.epochs
 
     if DATA_PATH == "path/to/your/data" or MODEL_PATH == "path/to/models/followup_ablation":
-        print("\n⚠️ WARNING: Please update DATA_PATH and MODEL_PATH!")
+        print("\n WARNING: Please update DATA_PATH and MODEL_PATH!")
         response = input("Continue anyway? (y/n): ")
         if response.lower() != 'y':
             exit(0)
@@ -619,10 +589,10 @@ This script runs ~26 experiments to find the true optimal configuration.
     results = run_followup_study()
 
     print("\n" + "=" * 80)
-    print("✅ FOLLOW-UP STUDY COMPLETE!")
+    print(" FOLLOW-UP STUDY COMPLETE!")
     print("=" * 80)
 
     best = results.nlargest(1, 'kappa_score').iloc[0]
-    print(f"\n🏆 Best configuration: {best['experiment']}")
+    print(f"\n Best configuration: {best['experiment']}")
     print(f"  Kappa: {best['kappa_score']:.4f}")
     print(f"  Improvement over initial best: {best['kappa_score'] - 0.8339:+.4f}")

@@ -1,10 +1,5 @@
 """
-EEG Data Augmentation Script - Identity-Preserving for Biometrics
-
-This script creates augmented versions of EEG CSV files using identity-preserving
-augmentations suitable for biometric identification tasks. Unlike traditional
-augmentations that modify frequency or amplitude, these augmentations preserve
-user-specific signal characteristics while adding realistic variability.
+EEG Data Augmentation Script New
 
 Augmentation techniques applied:
 1. Additive Gaussian noise (preserves signal morphology)
@@ -12,9 +7,6 @@ Augmentation techniques applied:
 3. Random segment dropout/masking (simulates artifacts)
 4. Channel-specific noise (simulates electrode impedance changes)
 5. Temporal jitter (simulates timing variations)
-
-Each original sample is augmented N times, creating N+1 total versions 
-(1 original + N augmented).
 
 Usage:
     python augment_eeg_biometric.py input_dir output_dir --n_augmentations=10 --verbose=True
@@ -441,7 +433,7 @@ def augment_dataset(input_dir, output_dir, n_augmentations=10,
     failed = 0
     for result in results:
         if "ERROR" in result:
-            print(f"❌ {result}")
+            print(f"x {result}")
             failed += 1
         else:
             if verbose:

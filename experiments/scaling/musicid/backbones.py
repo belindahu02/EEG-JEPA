@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-# Basic ResNet block for 2D spectrograms WITH DROPOUT
+# Basic ResNet block for 2D spectrograms with dropout
 class ResNetBlock2D(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=(3, 3), stride=(1, 1), skip=True, dropout_rate=0.0):
         super().__init__()
@@ -56,7 +56,7 @@ class ResNetBlock2D(nn.Module):
         return out
 
 
-# Final block with global pooling for 2D spectrograms WITH DROPOUT
+# Final block with global pooling for 2D spectrograms with dropout
 class ResNetBlockFinal2D(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=(3, 3), skip=True, dropout_rate=0.0):
         super().__init__()
@@ -103,7 +103,7 @@ class ResNetBlockFinal2D(nn.Module):
         return out.squeeze(-1).squeeze(-1)  # [B, C]
 
 
-# Complete 2D ResNet for spectrograms WITH DROPOUT
+# Complete 2D ResNet for spectrograms with dropout
 class SpectrogramResNet(nn.Module):
     def __init__(self, input_channels=1, num_classes=10, channels=None, dropout_rate=0.0, classifier_dropout=0.0):
         """
@@ -157,7 +157,7 @@ class SpectrogramResNet(nn.Module):
         return x
 
 
-# Lightweight version for smaller spectrograms WITH DROPOUT
+# Lightweight version for smaller spectrograms with dropout
 class LightweightSpectrogramResNet(nn.Module):
     def __init__(self, input_channels=1, num_classes=10, channels=None, dropout_rate=0.0, classifier_dropout=0.0):
         """

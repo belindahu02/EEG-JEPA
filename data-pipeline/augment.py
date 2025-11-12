@@ -1,15 +1,13 @@
 """
 EEG Data Augmentation Script
 
-This script creates augmented versions of EEG CSV files by applying:
+Creates augmented versions of EEG CSV files by applying:
 1. Frequency wrapping (time axis scaling)
 2. Amplitude scaling
 
 Each original sample is augmented 10 times, creating 11 total versions (1 original + 10 augmented).
 The augmentation parameters are randomly selected from a uniform distribution U(0.8, 1.2)
 for both time scaling and amplitude scaling.
-
-This follows the methodology from BreathRNNet for creating augmented datasets.
 
 Usage:
     python augment_eeg_data.py input_dir output_dir --n_augmentations=10 --verbose=True
@@ -284,7 +282,7 @@ def augment_dataset(input_dir, output_dir, n_augmentations=10,
     failed = 0
     for result in results:
         if "ERROR" in result:
-            print(f"❌ {result}")
+            print(f"x {result}")
             failed += 1
         else:
             if verbose:

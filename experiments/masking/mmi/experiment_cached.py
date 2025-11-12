@@ -1,8 +1,6 @@
 """
 Main script to run the EEG masking experiment
 Integrates all components: masking, preprocessing, training, and evaluation
-WITH CHECKPOINT SUPPORT FOR RESUMING FROM INTERRUPTIONS
-UPDATED: Now uses same hyperparameters and model configuration as scaling experiment
 """
 
 import sys
@@ -40,7 +38,7 @@ class EEGMaskingExperiment:
         for d in [self.data_dir, self.models_dir, self.results_dir, self.plots_dir]:
             d.mkdir(exist_ok=True)
 
-        # Initialize checkpoint manager
+        # Initialise checkpoint manager
         checkpoint_dir = self.experiment_dir / "checkpoints"
         self.checkpoint_mgr = MaskingExperimentCheckpoint(checkpoint_dir)
 
@@ -64,7 +62,7 @@ class EEGMaskingExperiment:
 
         # Check for existing checkpoint
         if self.checkpoint_mgr.has_checkpoint():
-            print("⚠️  EXISTING CHECKPOINT FOUND")
+            print("️  EXISTING CHECKPOINT FOUND")
             print("The experiment can be resumed from the last saved state")
             print("Set resume=True in run_complete_experiment() to continue")
 
@@ -167,7 +165,7 @@ class EEGMaskingExperiment:
             raise ValueError(f"Unknown model_type: {model_type}. Must be 'full' or 'lightweight'")
 
 
-        # UPDATED: Initialize trainer with cosine classifier and advanced training techniques
+        # Initialise trainer with cosine classifier and advanced training techniques
         trainer = MaskingExperimentTrainer(
             model, 
             device=device,
@@ -185,7 +183,7 @@ class EEGMaskingExperiment:
         print(f"  - Warmup epochs: {self.config.get('warmup_epochs', 5)}")
         print(f"  - Weight decay: {self.config.get('weight_decay', 1e-4)}")
         
-        # UPDATED: Train with weight decay parameter
+        #Train with weight decay parameter
         best_val_acc = trainer.train_model(
             train_loader=train_loader,
             val_loader=val_loader,
@@ -294,7 +292,7 @@ class EEGMaskingExperiment:
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        # UPDATED: Load trained model with same configuration as training
+        # Load trained model with same configuration as training
         num_classes = len(self.config['user_ids'])
         model_type = self.config.get('model_type', 'lightweight')
 
@@ -609,24 +607,18 @@ class EEGMaskingExperiment:
                 return [convert_numpy(x) for x in obj]
             return obj
 
-        # -----------------------------
         # Save as JSON
-        # -----------------------------
         json_path = self.results_dir / "experiment_results.json"
         with open(json_path, 'w') as f:
             json.dump(convert_numpy(results_data), f, indent=2)
 
-        # -----------------------------
         # Save as pickle
-        # -----------------------------
         import pickle
         pickle_path = self.results_dir / "experiment_results.pkl"
         with open(pickle_path, 'wb') as f:
             pickle.dump(results_data, f)
 
-        # -----------------------------
         # Save matrices as NumPy arrays
-        # -----------------------------
         npz_path = self.results_dir / "results_matrices.npz"
         np.savez(
             npz_path,
@@ -638,9 +630,7 @@ class EEGMaskingExperiment:
             num_blocks_range=np.array(self.num_blocks_range)
         )
 
-        # -----------------------------
         # Print saved paths
-        # -----------------------------
         print(f"Results saved to:")
         print(f"  JSON: {json_path}")
         print(f"  Pickle: {pickle_path}")

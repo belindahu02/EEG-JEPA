@@ -11,7 +11,6 @@ from data_loader import *
 
 
 def compute_cohen_kappa(y_true, y_pred, num_classes):
-    """Compute Cohen's Kappa score manually"""
     if len(y_pred.shape) == 2:
         y_pred_classes = np.argmax(y_pred, axis=1)
     else:
@@ -58,7 +57,6 @@ def trainer(num_users, fet_extrct, scen, ft, checkpoint_dir=None):
     frame_size = 40
     path = "/app/data/1.0.0"
     
-    # Increase batch size for multi-GPU (batch per GPU will be batch_size / num_replicas)
     batch_size = 64 * strategy.num_replicas_in_sync
 
     # Select users
@@ -69,7 +67,6 @@ def trainer(num_users, fet_extrct, scen, ft, checkpoint_dir=None):
     print(f"Batch size: {batch_size} (per GPU: {batch_size // strategy.num_replicas_in_sync})")
     print(f"{'=' * 60}")
 
-    # Load ALL data into memory - MUCH faster than on-the-fly loading
     print("\nLoading all data into memory...")
     train_ds, val_ds, test_ds, steps = data_load_with_tf_datasets(
         path, users=users, 
@@ -93,7 +90,6 @@ def trainer(num_users, fet_extrct, scen, ft, checkpoint_dir=None):
 
     # Build model inside strategy scope for multi-GPU
     with strategy.scope():
-        # Clone feature extractor inside strategy scope to avoid distribution issues
         fet_extrct_dist = tf.keras.models.clone_model(fet_extrct)
         fet_extrct_dist.set_weights(fet_extrct.get_weights())
         
@@ -138,8 +134,8 @@ def trainer(num_users, fet_extrct, scen, ft, checkpoint_dir=None):
         base_lr = 0.001 if num_users < 50 else 0.0005
         initial_lr = base_lr / max(1, (ft + 1) * 0.5)
         
-        # Use cosine decay for better convergence
-        total_steps = steps['train'] * 100  # 100 max epochs
+        # Use cosine decay
+        total_steps = steps['train'] * 100
         
         lr_schedule = tf.keras.optimizers.schedules.CosineDecay(
             initial_learning_rate=initial_lr,

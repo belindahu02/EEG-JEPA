@@ -1,8 +1,8 @@
 """
-Reproducibility Testing Script - Scheduler Comparison
+Reproducibility Testing Script
 
 Tests the most critical configurations from both ablation studies
-with TWO different learning rate schedulers to identify the cause
+with two different learning rate schedulers to identify the cause
 of non-reproducible results.
 
 Scheduler types tested:
@@ -26,18 +26,13 @@ import seaborn as sns
 from datetime import datetime
 from trainers_cosine import spectrogram_trainer_2d
 
-# Set publication-quality plot defaults
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['savefig.dpi'] = 300
 plt.rcParams['font.size'] = 10
 plt.rcParams['font.family'] = 'serif'
 
-# =============================================
-# CONFIGURATION
-# =============================================
-
-DATA_PATH = "/app/data/grouped_embeddings_full"  # UPDATE THIS
-MODEL_PATH = "/app/data/experiments/ablation_reproducibility"  # UPDATE THIS
+DATA_PATH = "/app/data/grouped_embeddings_full"
+MODEL_PATH = "/app/data/experiments/ablation_reproducibility"
 NORMALIZATION_METHOD = "log_scale"
 
 USER_IDS = list(range(1, 31))  # 30 users
@@ -51,18 +46,12 @@ COMMON_PARAMS = {
     'epochs': 50,
     'use_augmentation': True,
     'device': 'cuda',
-    'save_model_checkpoints': True,  # MUST be True for logger to work
+    'save_model_checkpoints': True,
     'max_cache_size': 50,
     'use_cosine_classifier': True,
 }
 
-# Seeds for reproducibility testing
 TEST_SEEDS = [42, 123, 456]
-
-
-# =============================================
-# CRITICAL CONFIGURATIONS TO TEST
-# =============================================
 
 def get_critical_configs():
     """
@@ -129,11 +118,6 @@ def get_critical_configs():
         })
 
     return configs
-
-
-# =============================================
-# REPRODUCIBILITY TESTING
-# =============================================
 
 def run_single_test(config_name, config_desc, config_params, seed, run_number, results_dir):
     """Run a single test with a specific seed"""
@@ -206,7 +190,6 @@ def run_reproducibility_tests():
     print(f"\nResults directory: {results_dir}")
     print("=" * 80)
 
-    # Run all tests
     all_results = []
 
     for config_idx, config in enumerate(configs, 1):
@@ -266,11 +249,6 @@ def run_reproducibility_tests():
 
     return results_df
 
-
-# =============================================
-# ANALYSIS FUNCTIONS
-# =============================================
-
 def analyze_reproducibility(df, vis_dir, results_dir):
     """Analyze reproducibility and generate report"""
 
@@ -296,7 +274,6 @@ def analyze_reproducibility(df, vis_dir, results_dir):
                 deviation = 0.0
 
             # Reproducibility score: lower is better
-            # For configs without expected value, only consider std
             reproducibility_score = std_kappa + abs(deviation) if deviation != 0 else std_kappa
 
             # Determine scheduler type from config name
@@ -322,7 +299,7 @@ def analyze_reproducibility(df, vis_dir, results_dir):
     # Save summary
     summary_df.to_csv(os.path.join(results_dir, 'reproducibility_summary.csv'), index=False)
 
-    # Generate visualizations
+    # Generate visualisations
     plot_reproducibility_bars(df, vis_dir)
     plot_scheduler_comparison(summary_df, vis_dir)
     plot_variance_analysis(summary_df, vis_dir)
@@ -355,14 +332,12 @@ def plot_reproducibility_bars(df, save_dir):
             expected_vals.append(expected)
             has_expected.append(True)
         else:
-            expected_vals.append(0)  # Placeholder, won't be plotted
+            expected_vals.append(0)
             has_expected.append(False)
 
-    # Plot bars with error bars
     bars = ax.bar(x_pos, means, yerr=stds, capsize=10, alpha=0.7,
                   color='steelblue', label='Measured (Mean ± Std)')
 
-    # Plot expected values only where they exist
     expected_x = [x for x, has_exp in zip(x_pos, has_expected) if has_exp]
     expected_y = [y for y, has_exp in zip(expected_vals, has_expected) if has_exp]
 
@@ -397,7 +372,6 @@ def plot_scheduler_comparison(summary_df, save_dir):
     """Compare plateau vs constant scheduler directly"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-    # Extract base config names (without scheduler suffix)
     summary_df['base_config'] = summary_df['Config'].str.replace('_plateau', '').str.replace('_constant', '')
 
     # Group by base config
@@ -497,7 +471,6 @@ def plot_variance_analysis(summary_df, save_dir):
 
 def plot_deviation_analysis(summary_df, save_dir):
     """Plot deviation from expected values"""
-    # Only plot configs that have expected values
     plot_df = summary_df[summary_df['Expected'].notna()].copy()
 
     if len(plot_df) == 0:
@@ -535,10 +508,10 @@ def plot_deviation_analysis(summary_df, save_dir):
 
 
 def generate_reproducibility_report(summary_df, full_df, results_dir):
-    """Generate comprehensive reproducibility report"""
+    """Generate reproducibility report"""
     lines = []
     lines.append("=" * 80)
-    lines.append("REPRODUCIBILITY TESTING REPORT - SCHEDULER COMPARISON")
+    lines.append("REPRODUCIBILITY TESTING REPORT")
     lines.append("=" * 80)
     lines.append(f"\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     lines.append(f"Configurations tested: {len(summary_df)}")
@@ -572,10 +545,10 @@ def generate_reproducibility_report(summary_df, full_df, results_dir):
         if constant_configs['Std'].mean() < plateau_configs['Std'].mean():
             improvement = (plateau_configs['Std'].mean() - constant_configs['Std'].mean()) / plateau_configs[
                 'Std'].mean() * 100
-            lines.append(f"\n✅ CONSTANT LR is {improvement:.1f}% more reproducible")
+            lines.append(f"\n CONSTANT LR is {improvement:.1f}% more reproducible")
             lines.append(f"   (Lower variance across seeds)")
         else:
-            lines.append(f"\n⚠️  ReduceLROnPlateau shows better reproducibility (unexpected)")
+            lines.append(f"\n⚠  ReduceLROnPlateau shows better reproducibility (unexpected)")
 
         # Performance comparison
         perf_diff = constant_configs['Mean'].mean() - plateau_configs['Mean'].mean()
@@ -594,14 +567,13 @@ def generate_reproducibility_report(summary_df, full_df, results_dir):
     good_configs = summary_df[summary_df['Status'] == 'GOOD']
     bad_configs = summary_df[summary_df['Status'] == 'NEEDS ATTENTION']
 
-    lines.append(f"\nConfigurations with GOOD reproducibility: {len(good_configs)}/{len(summary_df)}")
-    lines.append(f"Configurations NEEDING ATTENTION: {len(bad_configs)}/{len(summary_df)}")
+    lines.append(f"\nConfigurations with good reproducibility: {len(good_configs)}/{len(summary_df)}")
+    lines.append(f"Configurations with bad reproducibility: {len(bad_configs)}/{len(summary_df)}")
 
     if len(good_configs) == len(summary_df):
-        lines.append("\n✅ ALL CONFIGURATIONS ARE REPRODUCIBLE!")
-        lines.append("   Your training pipeline is stable and reliable.")
+        lines.append("\n ALL CONFIGURATIONS ARE REPRODUCIBLE")
     elif len(bad_configs) > 0:
-        lines.append("\n⚠️  REPRODUCIBILITY ISSUES DETECTED")
+        lines.append("\n️  REPRODUCIBILITY ISSUES DETECTED")
         lines.append("   Some configurations show high variance or deviation from expected.")
 
     # Detailed results
@@ -625,12 +597,12 @@ def generate_reproducibility_report(summary_df, full_df, results_dir):
         lines.append(f"  Range: [{row['Min']:.4f}, {row['Max']:.4f}]")
 
         if row['Status'] == 'GOOD':
-            lines.append(f"  ✅ Reproducible - Low variance, close to expected")
+            lines.append(f"   Reproducible - Low variance, close to expected")
         else:
             if row['Std'] >= 0.02:
-                lines.append(f"  ⚠️  High variance (std = {row['Std']:.4f})")
+                lines.append(f"  ️  High variance (std = {row['Std']:.4f})")
             if not pd.isna(row['Expected']) and abs(row['Deviation']) >= 0.05:
-                lines.append(f"  ⚠️  Large deviation from expected ({row['Deviation']:+.4f})")
+                lines.append(f"  ️  Large deviation from expected ({row['Deviation']:+.4f})")
 
     # Identify best configuration
     lines.append("\n" + "=" * 80)
@@ -643,11 +615,11 @@ def generate_reproducibility_report(summary_df, full_df, results_dir):
     lines.append(f"  Reproducibility: {best_config['Status']}")
 
     if best_config['Status'] == 'GOOD':
-        lines.append(f"\n✅ RECOMMENDED FOR THESIS:")
+        lines.append(f"\n RECOMMENDATION:")
         lines.append(f"   Use {best_config['Config']} configuration")
         lines.append(f"   Expected performance: {best_config['Mean']:.4f} ± {best_config['Std']:.4f}")
     else:
-        lines.append(f"\n⚠️  Best config has reproducibility issues!")
+        lines.append(f"\n⚠  Best config has reproducibility issues!")
 
         # Find best reproducible config
         good_sorted = summary_df[summary_df['Status'] == 'GOOD'].sort_values('Mean', ascending=False)
@@ -666,36 +638,17 @@ def generate_reproducibility_report(summary_df, full_df, results_dir):
     lines.append("\n1. SCHEDULER CHOICE:")
     if len(constant_configs) > 0 and len(plateau_configs) > 0:
         if constant_configs['Std'].mean() < plateau_configs['Std'].mean():
-            lines.append("   ✅ USE CONSTANT LR AFTER WARMUP")
-            lines.append("      Reasons:")
-            lines.append("      - More reproducible (lower variance)")
-            lines.append("      - Deterministic behavior")
-            lines.append("      - Easier to compare experiments")
+            lines.append("    USE CONSTANT LR AFTER WARMUP")
             if constant_configs['Mean'].mean() >= plateau_configs['Mean'].mean():
                 lines.append("      - Equal or better performance")
         else:
-            lines.append("   ⚠️  ReduceLROnPlateau showed better reproducibility (unexpected)")
+            lines.append("     ReduceLROnPlateau showed better reproducibility")
             lines.append("      This needs further investigation")
 
     if len(bad_configs) > 0:
         lines.append("\n2. REPRODUCIBILITY ISSUES FOUND:")
         for _, row in bad_configs.iterrows():
             lines.append(f"   - {row['Config']}: High variance (std={row['Std']:.4f})")
-
-        lines.append("\n3. POSSIBLE CAUSES:")
-        lines.append("   - ReduceLROnPlateau triggering at different times")
-        lines.append("   - Random initialization variations")
-        lines.append("   - Data loading/shuffling differences")
-
-        lines.append("\n4. NEXT STEPS FOR THESIS:")
-        lines.append("   ✅ Switch to constant LR after warmup for all experiments")
-        lines.append("   ✅ Re-run your ablation studies with new scheduler")
-        lines.append("   ✅ Report results with confidence intervals")
-    else:
-        lines.append("\n2. FOR THESIS:")
-        lines.append("   ✅ Your setup is reproducible!")
-        lines.append("   ✅ Use the best configuration confidently")
-        lines.append("   ✅ Report mean ± std across seeds")
 
     # Best overall config
     best_overall = summary_df.nlargest(1, 'Mean').iloc[0]
@@ -716,11 +669,6 @@ def generate_reproducibility_report(summary_df, full_df, results_dir):
 
     print(f"\n✓ Saved: reproducibility_report.txt")
     print("\n" + "\n".join(lines))
-
-
-# =============================================
-# MAIN
-# =============================================
 
 if __name__ == "__main__":
     import argparse
@@ -746,8 +694,6 @@ Configurations tested:
 Each config tested with both schedulers, 3 seeds each.
 Total: 12 experiments (2 configs × 2 schedulers × 3 seeds)
 
-NOTE: You need to update trainers_cosine.py to add the 
-'lr_scheduler_type' parameter for this to work!
         """
     )
 
@@ -777,13 +723,7 @@ NOTE: You need to update trainers_cosine.py to add the
 
     if args.quick:
         TEST_SEEDS = [42, 123]
-        print("\n⚡ Quick mode: Using 2 seeds instead of 3")
-
-    if DATA_PATH == "path/to/your/data" or MODEL_PATH == "path/to/models/reproducibility_test":
-        print("\n⚠️ WARNING: Please update DATA_PATH and MODEL_PATH!")
-        response = input("Continue anyway? (y/n): ")
-        if response.lower() != 'y':
-            exit(0)
+        print("\n Quick mode: Using 2 seeds instead of 3")
 
     print("\n" + "=" * 80)
     print("REPRODUCIBILITY TESTING - SCHEDULER COMPARISON")
@@ -799,20 +739,16 @@ NOTE: You need to update trainers_cosine.py to add the
     print(f"Estimated time: ~{4 * len(TEST_SEEDS) * COMMON_PARAMS['epochs'] * 2 / 60:.1f} hours")
     print("=" * 80)
 
-    print("\n🔬 Starting reproducibility tests...")
+    print("\n Starting reproducibility tests...")
     results = run_reproducibility_tests()
 
     print("\n" + "=" * 80)
-    print("✅ REPRODUCIBILITY TESTING COMPLETE!")
+    print(" REPRODUCIBILITY TESTING COMPLETE")
     print("=" * 80)
-    print("\n📊 Check the following files:")
+    print("\n Check the following files:")
     print("  - reproducibility_report.txt: Detailed analysis")
     print("  - reproducibility_summary.csv: Statistical summary")
     print("  - scheduler_comparison.png: Plateau vs Constant comparison")
     print("  - reproducibility_bars.png: Visual comparison")
     print("  - variance_analysis.png: Variance across seeds")
     print("  - deviation_analysis.png: Deviation from expected")
-
-    print("\n🔍 KEY QUESTION ANSWERED:")
-    print("  Is ReduceLROnPlateau causing non-reproducible results?")
-    print("  → Check scheduler_comparison.png and the report!")

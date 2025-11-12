@@ -5,11 +5,8 @@ import matplotlib.pyplot as plt
 import gc
 import tensorflow as tf
 
-# Base output directory on host
-#base_dir = "test/"
 base_dir = "/app/data/experiments/scaling/baselines"
 
-# Make sure these exist
 graph_data_dir = os.path.join(base_dir, "multi_task/graph_data")
 graphs_dir = os.path.join(base_dir, "multi_task/graphs")
 
@@ -42,8 +39,6 @@ def plotspu(ft):
 
     variable_name = "number of users"
     # Number of users to test
-    # Start with smaller range, expand after verifying it works
-    # Full range: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 109]
     variable = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 109]
 
     acc = []
@@ -63,21 +58,18 @@ def plotspu(ft):
             acc_temp.append(test_acc)
             kappa_temp.append(kappa_score)
 
-            # Force garbage collection and clear session between iterations
             tf.keras.backend.clear_session()
             gc.collect()
 
         acc.append(acc_temp)
         kappa.append(kappa_temp)
 
-        # Save intermediate results after each user count
         acc_array = np.array(acc)
         kappa_array = np.array(kappa)
         np.savez(os.path.join(graph_data_dir, model_name + "_partial.npz"),
                  test_acc=acc, kappa_score=kappa)
         print(f"Saved intermediate results for {num_users} users")
         
-        # Additional cleanup after each user count
         gc.collect()
 
     acc = np.array(acc)

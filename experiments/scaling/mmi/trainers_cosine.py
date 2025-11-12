@@ -1,7 +1,3 @@
-# =============================================
-# Enhanced trainers_2d.py with Cosine Classifier, Label Smoothing, Warmup, and DROPOUT
-# =============================================
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,10 +17,7 @@ import gc
 torch.backends.cudnn.benchmark = True
 torch.backends.cudnn.enabled = True
 
-
-# =============================================
-# NEW: Cosine Classifier Head
-# =============================================
+# Cosine classifier
 class CosineClassifier(nn.Module):
 
     """
@@ -38,7 +31,7 @@ class CosineClassifier(nn.Module):
         self.num_classes = num_classes
         self.scale = scale
 
-        # Learnable weight matrix (will be L2-normalized)
+        # Learnable weight matrix
         self.weight = nn.Parameter(torch.randn(num_classes, in_features))
         nn.init.xavier_uniform_(self.weight)
 
@@ -56,9 +49,7 @@ class CosineClassifier(nn.Module):
         return logits * self.scale
 
 
-# =============================================
-# NEW: Label Smoothing Loss
-# =============================================
+# Label Smoothing Loss
 class LabelSmoothingCrossEntropy(nn.Module):
     """
     Cross entropy loss with label smoothing.
@@ -86,9 +77,7 @@ class LabelSmoothingCrossEntropy(nn.Module):
         return torch.mean(torch.sum(-true_dist * log_probs, dim=1))
 
 
-# =============================================
-# NEW: Warmup Scheduler
-# =============================================
+# Warmup Scheduler
 class WarmupScheduler:
     """
     Linear warmup followed by another scheduler.
@@ -117,9 +106,7 @@ class WarmupScheduler:
         return [group['lr'] for group in self.optimizer.param_groups]
 
 
-# =============================================
-# Modified Model Wrapper with Cosine Classifier
-# =============================================
+# Model Wrapper with Cosine Classifier
 class ModelWithCosineClassifier(nn.Module):
     """
     Wraps backbone and replaces final layer with cosine classifier.
@@ -411,9 +398,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
         logger.info(f"Weight decay: {weight_decay}")
         logger.info(f"Model checkpoints will be saved to: {run_checkpoint_dir}")
 
-    # --------------------------
-    # Create session-based data loaders (NO DATA LEAKAGE)
-    # --------------------------
+    # Create session-based data loaders
     logger.info("Creating session-based data loaders (NO DATA LEAKAGE)...")
     logger.info("Split strategy: 10 sessions train, 2 sessions val, 2 sessions test per user")
     start_time = time.time()
@@ -453,7 +438,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
 
     # Get sample batch to determine input shape
     sample_batch = next(iter(train_loader))
-    input_shape = sample_batch[0].shape[1:]  # Remove batch dimension
+    input_shape = sample_batch[0].shape[1:]
     num_classes = len(user_ids)
 
     logger.info(f"Input shape: {input_shape}")
@@ -465,8 +450,8 @@ def spectrogram_trainer_2d(data_path, user_ids,
         train_loader.dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=0,  # Reduced from 4 to avoid memory issues
-        pin_memory=False,  # Disabled to save memory
+        num_workers=0,
+        pin_memory=False,
         persistent_workers=False
     )
     val_loader = DataLoader(
@@ -489,10 +474,8 @@ def spectrogram_trainer_2d(data_path, user_ids,
     logger.info(f"Cache size: {max_cache_size}")
     logger.info(f"User IDs included: {user_ids[:5]}...{user_ids[-5:] if len(user_ids) > 5 else user_ids}")
 
-    # --------------------------
-    # Build model with cosine classifier and DROPOUT
-    # --------------------------
-    input_channels = input_shape[0]  # Should be 1 for grayscale spectrograms
+    # Build model with cosine classifier and dropout
+    input_channels = input_shape[0]
 
     if model_type == 'lightweight':
         backbone = LightweightSpectrogramResNet(
@@ -515,7 +498,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     else:
         raise ValueError(f"Unknown model type: {model_type}")
 
-    # Wrap with cosine classifier if requested
+    # Wrap with cosine classifier
     if use_cosine_classifier:
         model = ModelWithCosineClassifier(backbone, num_classes, embedding_dim, scale=cosine_scale)
         logger.info(f"Using Cosine Classifier with scale={cosine_scale}")
@@ -535,9 +518,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
     logger.info(f"Total parameters: {total_params:,}")
     logger.info(f"Trainable parameters: {trainable_params:,}")
 
-    # --------------------------
-    # Training setup with label smoothing, warmup, and WEIGHT DECAY
-    # --------------------------
+    # Training setup with label smoothing, warmup, and weight decay
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     # Use label smoothing loss
@@ -629,9 +610,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
             for old_checkpoint in checkpoints[:-3]:
                 os.remove(os.path.join(run_checkpoint_dir, old_checkpoint))
 
-    # --------------------------
     # Training loop with memory management
-    # --------------------------
     logger.info(f"Starting session-based training for {epochs} epochs...")
     logger.info(f"Early stopping patience: {early_stopping_patience}")
 
@@ -862,9 +841,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
         final_plot_path = os.path.join(run_checkpoint_dir, 'final_training_curves.png')
         plot_training_curves(training_history, final_plot_path)
 
-    # --------------------------
     # Load best model and evaluate
-    # --------------------------
     if best_model_state is not None:
         model.load_state_dict(best_model_state)
         logger.info("Loaded best model for final evaluation")
@@ -958,9 +935,7 @@ def spectrogram_trainer_2d(data_path, user_ids,
 
         logger.info(f"Session-based 2D Training completed. All files saved to: {run_checkpoint_dir}")
 
-    # --------------------------
     # Confusion Matrices (Train + Test)
-    # --------------------------
     logger.info("Generating confusion matrices...")
 
     # --- Training confusion matrix ---

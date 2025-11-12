@@ -30,7 +30,7 @@ def DA_MagWarp(X, sigma = 0.5):
     return X * GenerateRandomCurves(X, sigma)
 
 def DistortTimesteps(X, sigma=0.2):
-    tt = GenerateRandomCurves(X, sigma) # Regard these samples aroun 1 as time intervals
+    tt = GenerateRandomCurves(X, sigma) # Regard these samples around 1 as time intervals
     tt_cum = np.cumsum(tt, axis=0)        # Add intervals to make a cumulative graph
     # Make the last value to have X.shape[0]
     t_scale = [(X.shape[0]-1)/tt_cum[-1,0],(X.shape[0]-1)/tt_cum[-1,1],(X.shape[0]-1)/tt_cum[-1,2]]

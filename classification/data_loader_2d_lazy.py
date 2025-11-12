@@ -1,7 +1,3 @@
-# =============================================
-# FIXED data_loader_2d_lazy.py - No Double Normalization
-# =============================================
-
 import torch
 from torch.utils.data import Dataset, DataLoader
 import os
@@ -9,9 +5,6 @@ import numpy as np
 
 
 class SpectrogramDataset(Dataset):
-    """
-    Fixed dataset that handles pre-normalized spectrograms correctly
-    """
 
     def __init__(self, file_paths, labels, normalization='none', add_channel_dim=True,
                  augment=False, cache_size=100):
@@ -31,7 +24,7 @@ class SpectrogramDataset(Dataset):
 
     def _check_data_normalization(self):
         """Check if data is already normalized by sampling a few files"""
-        print("Checking if data is pre-normalized...")
+        print("Checking if data is pre-normalized")
 
         sample_indices = np.random.choice(len(self.file_paths), min(5, len(self.file_paths)), replace=False)
         means = []
@@ -56,15 +49,12 @@ class SpectrogramDataset(Dataset):
 
             # Check if data appears pre-normalized (mean~0, std~1)
             if abs(avg_mean) < 0.1 and 0.5 < avg_std < 2.0:
-                print("✅ Data appears to be PRE-NORMALIZED")
+                print("Data appears to be pre-normalised")
                 if self.normalization != 'none':
-                    print(
-                        f"⚠️  WARNING: You requested '{self.normalization}' normalization on already normalized data!")
-                    print("   This will cause double normalization and gradient explosion.")
-                    print("   Switching to 'none' normalization...")
+                    print("   Switching to 'none' normalisation")
                     self.normalization = 'none'
             else:
-                print("Data appears to need normalization")
+                print("Data appears to need normalisation")
 
     def __len__(self):
         return len(self.file_paths)
@@ -110,9 +100,7 @@ class SpectrogramDataset(Dataset):
         return torch.tensor(spec, dtype=torch.float32), torch.tensor(label, dtype=torch.long)
 
     def _normalize_single(self, spec, method):
-        """
-        SAFE normalization methods that won't cause gradient explosion
-        """
+
         if method == 'none':
             return spec
 
@@ -137,13 +125,11 @@ class SpectrogramDataset(Dataset):
                 return np.zeros_like(spec)
             else:
                 result = (spec - mean) / std
-                return np.clip(result, -3.0, 3.0)  # Gentle clipping
+                return np.clip(result, -3.0, 3.0)
 
-        # AVOID log_scale, decibel, or any extreme transformations on pre-normalized data
         return spec
 
     def _augment_single(self, spec):
-        """Gentle augmentation that won't break pre-normalized data"""
         if np.random.rand() > 0.8:  # Very light augmentation
             if spec.ndim == 3:  # (channel, time, freq)
                 t_max = spec.shape[1]
@@ -222,7 +208,7 @@ def create_memory_efficient_dataloaders_masked(train_data_path, test_data_path, 
 
     print("Creating memory-efficient data loaders (masked test)...")
 
-    # Normalize absolutes for reliable relpath manipulation
+    # Normalise absolutes for reliable relpath manipulation
     train_root = os.path.abspath(train_data_path)
     test_root = os.path.abspath(test_data_path)
 
@@ -258,7 +244,7 @@ def create_memory_efficient_dataloaders_masked(train_data_path, test_data_path, 
 
     print(f"Using {len(file_paths)} files after limiting samples per user")
 
-    # Train/val/test split (same as FIXED)
+    # Train/val/test split
     train_paths, train_labels = [], []
     val_paths, val_labels = [], []
     test_train_paths, test_labels = [], []  # these are the original train-based test file paths
@@ -329,7 +315,7 @@ def create_memory_efficient_dataloaders_masked(train_data_path, test_data_path, 
             if len(candidates) == 1:
                 mapped_test_paths.append(os.path.abspath(candidates[0]))
                 final_test_labels.append(label)
-                print(f"⚠️ Fallback: using basename match for {orig_path} -> {candidates[0]}")
+                print(f"Fallback: using basename match for {orig_path} -> {candidates[0]}")
             elif len(candidates) > 1:
                 # multiple choices: try to pick candidate whose relpath (under test_root) matches rel's tail
                 chosen = None
@@ -342,17 +328,17 @@ def create_memory_efficient_dataloaders_masked(train_data_path, test_data_path, 
                     chosen = candidates[0]
                 mapped_test_paths.append(os.path.abspath(chosen))
                 final_test_labels.append(label)
-                print(f"⚠️ Fallback (multiple) for {orig_path} -> {chosen} (basename collision)")
+                print(f"Fallback (multiple) for {orig_path} -> {chosen} (basename collision)")
             else:
                 # missing masked file
-                print(f"⚠️ Warning: masked file not found for {orig_path}")
+                print(f"Warning: masked file not found for {orig_path}")
                 # NOTE: we *skip* adding this test sample (so final test set may be smaller)
 
     test_paths = mapped_test_paths
 
     print(f"Final split: Train={len(train_paths)}, Val={len(val_paths)}, Test={len(test_paths)}")
 
-    # ✅ Sanity check with example pathnames (compare relative paths)
+    # Sanity check with example pathnames (compare relative paths)
     train_val_rels = [os.path.relpath(p, start=train_root) for p in train_paths + val_paths]
     test_rels = [os.path.relpath(p, start=test_root) for p in test_paths]
 
@@ -367,10 +353,10 @@ def create_memory_efficient_dataloaders_masked(train_data_path, test_data_path, 
 
     example_matches = [rel for rel in test_rels if rel in train_val_rels][:5]
     if example_matches:
-        print(f"✅ Example matching relpaths: {example_matches}")
+        print(f"Example matching relpaths: {example_matches}")
 
     if unmatched:
-        print(f"⚠️ Example unmatched relpaths (test but not train/val): {unmatched[:5]}")
+        print(f"Example unmatched relpaths (test but not train/val): {unmatched[:5]}")
 
     # Optional: print the actual full paths for context
     print("\nExample train/val paths (first 10):")
@@ -414,8 +400,7 @@ def create_memory_efficient_dataloaders(data_path, user_ids, samples_per_user,
 
     # Automatically detect if we should skip normalization
     if normalization in ['log_scale', 'decibel', 'min_max', 'z_score']:
-        print(f"⚠️  WARNING: Requested '{normalization}' but data appears pre-normalized.")
-        print("   Switching to 'none' to avoid double normalization.")
+        print("   Switching to 'none' to avoid double normalisation.")
         normalization = 'none'
 
     # Get all file paths and labels
@@ -666,10 +651,10 @@ def test_fixed_loader(data_path, user_ids, samples_per_user=50):
     print(f"Final accuracy: {accuracy:.2f}% (Random baseline: {100 / len(user_ids):.2f}%)")
 
     if accuracy > (100 / len(user_ids)) * 2:
-        print("✅ Fixed! Model is now learning properly!")
+        print(" Fixed")
         return True
     else:
-        print("❌ Still having issues...")
+        print(" Still having issues")
         return False
 
 

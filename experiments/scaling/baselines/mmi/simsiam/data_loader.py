@@ -7,7 +7,6 @@ import tensorflow as tf
 
 
 def standardize(data):
-    """Manual standardization to replace sklearn StandardScaler"""
     mean = np.mean(data, axis=0, dtype=np.float32)
     std = np.std(data, axis=0, dtype=np.float32)
     std[std == 0] = 1
@@ -15,12 +14,10 @@ def standardize(data):
 
 
 def apply_standardization(data, mean, std):
-    """Apply pre-computed standardization"""
     return (data - mean) / std
 
 
 def load_edf_file(filepath, max_channels=64):
-    """Load a single EDF file efficiently"""
     try:
         raw = mne.io.read_raw_edf(filepath, preload=False, verbose=False)
         eeg_channels = [ch for ch in raw.ch_names if not ch.startswith('EOG')]
@@ -36,7 +33,6 @@ def load_edf_file(filepath, max_channels=64):
 
 
 def create_windows(data, frame_size=30, overlap=0.5):
-    """Create sliding windows efficiently using stride tricks"""
     if data.shape[0] < frame_size:
         return None
 
@@ -49,14 +45,6 @@ def create_windows(data, frame_size=30, overlap=0.5):
 
 
 def load_all_data_to_memory(path, users, folders, frame_size=30):
-    """
-    Load ALL data for specified users into memory at once.
-    This is much faster than on-the-fly loading during training.
-    
-    Returns:
-        x_data: numpy array of all windows
-        y_data: numpy array of all labels
-    """
     train_runs = list(range(1, 11))  # R01-R10
     val_runs = [11, 12]  # R11-R12
     test_runs = [13, 14]  # R13-R14
@@ -143,7 +131,6 @@ def load_all_data_to_memory(path, users, folders, frame_size=30):
 
 
 def compute_normalization_params(path, users, folders, frame_size=30, max_files=20):
-    """Compute normalization parameters from a subset of data"""
     print("Computing normalization parameters...")
 
     train_runs = list(range(1, 11))
@@ -207,7 +194,6 @@ def compute_normalization_params(path, users, folders, frame_size=30, max_files=
 
 
 def normalize_data(x_data, mean, std):
-    """Normalize data in-place to save memory"""
     print("Normalizing data...")
     original_shape = x_data.shape
     x_flat = x_data.reshape(-1, x_data.shape[-1])
@@ -217,13 +203,6 @@ def normalize_data(x_data, mean, std):
 
 
 def augment_data_in_memory(x_data, y_data):
-    """
-    Apply ALL augmentations to data in memory during loading (CPU).
-    This is done ONCE, so GPU can train fast without augmentation overhead.
-    Creates 4x more data with different augmentations.
-    
-    ALWAYS applies full augmentation - no adaptive logic.
-    """
     num_samples = x_data.shape[0]
     
     print("\nApplying augmentations to data (this will take a few minutes)...")
@@ -283,10 +262,6 @@ def augment_data_in_memory(x_data, y_data):
 
 
 def create_tf_dataset(x_data, y_data, batch_size, shuffle=True):
-    """
-    Create fast TensorFlow dataset from in-memory data
-    No runtime augmentation - data is already augmented
-    """
     dataset = tf.data.Dataset.from_tensor_slices((x_data, y_data))
     if shuffle:
         dataset = dataset.shuffle(buffer_size=min(10000, len(x_data)))
@@ -297,16 +272,6 @@ def create_tf_dataset(x_data, y_data, batch_size, shuffle=True):
 
 
 def data_load_with_tf_datasets(path, users, frame_size=30, batch_size=32):
-    """
-    Load all data into memory once, then create fast TF datasets
-    This is MUCH faster than on-the-fly file loading
-    
-    For large datasets (>80 users), loads and augments in chunks to avoid OOM
-    
-    Returns:
-        train_ds, val_ds, test_ds: TensorFlow datasets ready for training
-        steps: Dictionary with step counts
-    """
     print("\n" + "="*60)
     print("LOADING DATA INTO MEMORY")
     print("="*60)
@@ -449,7 +414,7 @@ def data_load_origin(path, users, folders, frame_size=30, max_samples_per_user=N
         x_data = np.concatenate(sampled_x, axis=0)
         y_data = np.concatenate(sampled_y, axis=0)
     
-    sessions = [1] * len(np.unique(y_data))  # Dummy session count
+    sessions = [1] * len(np.unique(y_data))
     return x_data, y_data, sessions
 
 

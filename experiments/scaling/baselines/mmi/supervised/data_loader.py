@@ -86,7 +86,7 @@ def data_load_eeg(path, users, frame_size=30):
 
 def norma(x_train, x_val, x_test):
     """
-    Normalize data using mean and standard deviation from training data only.
+    Normalise data using mean and standard deviation from training data only.
     """
     # Reshape for normalization
     original_train_shape = x_train.shape

@@ -6,12 +6,12 @@ import tensorflow as tf
 
 
 def data_load_origin(path, users, folders, frame_size=30):
-    """Legacy function - not used with EEG MMI dataset"""
+    """Legacy function"""
     pass
 
 
 def norma_origin(x_all):
-    """Legacy function - kept for compatibility"""
+    """Legacy function"""
     x = np.reshape(x_all, (x_all.shape[0] * x_all.shape[1], x_all.shape[2]))
     mean = np.mean(x, axis=0)
     std = np.std(x, axis=0)
@@ -22,7 +22,7 @@ def norma_origin(x_all):
 
 
 def user_data_split(x, y, samples_per_user):
-    """Legacy function - kept for compatibility"""
+    """Legacy function"""
     users, counts = np.unique(y, return_counts=True)
     x_train = np.array([])
     y_train = np.array([])
@@ -73,8 +73,7 @@ def load_edf_session(filepath, frame_size=40):
             gc.collect()
             return None
 
-        # Create sliding windows using numpy's stride tricks (more memory efficient)
-        # Pre-allocate the array
+        # Create sliding windows using numpy's stride
         windows = np.empty((n_windows, frame_size, n_channels), dtype=np.float32)
 
         for i in range(n_windows):
@@ -165,7 +164,7 @@ def compute_normalization_stats(path, users, frame_size=40):
                     gc.collect()
 
     std = np.sqrt(sum_squared_diff / total_samples).astype(np.float32)
-    std[std == 0] = 1  # Avoid division by zero
+    std[std == 0] = 1
 
     print(f"Normalization stats computed: mean shape {mean.shape}, std shape {std.shape}")
     return mean, std, n_channels
@@ -244,7 +243,6 @@ def get_file_list_and_labels(path, users, frame_size=40):
 class EEGDataGenerator(tf.keras.utils.Sequence):
     """
     Custom data generator for streaming EEG data.
-    Loads data on-the-fly during training to avoid memory issues.
     """
 
     def __init__(self, file_list, frame_size, mean, std, batch_size=8, shuffle=True):
@@ -346,7 +344,6 @@ class EEGDataGenerator(tf.keras.utils.Sequence):
 def data_load_eeg_mmi_streaming(path, users, frame_size=40):
     """
     Setup streaming data loading for EEG MMI dataset.
-    Returns file lists and normalization stats instead of loading all data.
 
     Returns:
         train_files, val_files, test_files: File lists for generators
@@ -363,7 +360,7 @@ def data_load_eeg_mmi_streaming(path, users, frame_size=40):
 
     print(f"Found {len(train_files)} training files, {len(val_files)} validation files, {len(test_files)} test files")
 
-    # Compute normalization statistics from training data
+    # Compute normalisation statistics from training data
     mean, std, _ = compute_normalization_stats(path, users, frame_size)
 
     # Calculate total samples
@@ -379,8 +376,7 @@ def data_load_eeg_mmi_streaming(path, users, frame_size=40):
 # Keep legacy function for backward compatibility
 def data_load_eeg_mmi(path, users, frame_size=40):
     """
-    DEPRECATED: This function loads all data into memory and may cause OOM errors.
-    Use data_load_eeg_mmi_streaming instead.
+    DEPRECATED: OOM
     """
     print("WARNING: Using legacy data_load_eeg_mmi - this loads all data into memory!")
     print("Consider using data_load_eeg_mmi_streaming for better memory efficiency.")
@@ -484,7 +480,7 @@ def data_load_eeg_mmi(path, users, frame_size=40):
 
 def norma(x_train, x_val, x_test):
     """
-    Normalize data using training set statistics.
+    Normalise data using training set statistics.
     """
     x_train = x_train.astype(np.float32)
     x_val = x_val.astype(np.float32)

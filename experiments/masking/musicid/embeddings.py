@@ -1,6 +1,5 @@
 """
 Embedding extraction for masking experiment using pre-trained JEPA encoder
-Based on your original precompute.py - uses Hydra config for model instantiation
 """
 
 import os
@@ -18,7 +17,6 @@ import torch.nn.functional as F
 class MaskingEvalDataset(Dataset):
     """
     Dataset for embedding extraction in masking experiment
-    Based on your original EvalDataset - EXACTLY the same
     """
     def __init__(self, csv_file, data_dir, crop_frames=208, repeat_short=True):
         self.df = pd.read_csv(csv_file)
@@ -32,7 +30,7 @@ class MaskingEvalDataset(Dataset):
         return len(self.df)
 
     def complete_audio(self, lms):
-        """Complete audio processing - EXACTLY from your original"""
+        """Complete audio processing"""
         l = lms.shape[-1]
         # repeat if shorter than crop_frames
         if self.repeat_short and l < self.crop_frames:
@@ -61,7 +59,7 @@ class MaskingEvalDataset(Dataset):
 
 
 def log(msg: str):
-    """Helper function for timestamped logging - from your original"""
+    """Helper function for timestamped logging"""
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
 
@@ -79,7 +77,7 @@ def _load_model_from_hydra(cfg: DictConfig, checkpoint_path: str, device: str):
             from src.utils import register_resolvers
 
             # Only register if not already done
-            if not OmegaConf.has_resolver("effective_lr"):  # replace with one of yours
+            if not OmegaConf.has_resolver("effective_lr"):
                 register_resolvers()
                 log("Custom resolvers registered")
             else:
@@ -137,7 +135,6 @@ def _hydra_load_helper(cfg: DictConfig):
 class EmbeddingExtractor:
     """
     Extract embeddings using pre-trained JEPA encoder
-    Uses Hydra config - EXACTLY like your original precompute.py
     """
 
     def __init__(self, checkpoint_path, config_path, device=None):
@@ -165,7 +162,7 @@ class EmbeddingExtractor:
         self.crop_frames = 208  # Default
 
     def load_model_with_hydra(self):
-        """Load model using Hydra config - EXACTLY like your original precompute.py"""
+        """Load model using Hydra config"""
         if not self.checkpoint_path.exists():
             raise FileNotFoundError(f"Checkpoint not found: {self.checkpoint_path}")
 
@@ -196,7 +193,6 @@ class EmbeddingExtractor:
     def extract_embeddings(self, csv_file, data_dir, output_dir, batch_size=16, num_workers=4):
         """
         Extract embeddings for all files listed in CSV
-        EXACTLY like your original precompute.py logic
         """
         if self.model is None:
             self.load_model_with_hydra()

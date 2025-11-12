@@ -12,7 +12,6 @@ from data_loader import *
 
 
 def compute_cohen_kappa(y_true, y_pred, num_classes):
-    """Compute Cohen's Kappa score manually."""
     if len(y_pred.shape) == 2:
         y_pred_classes = np.argmax(y_pred, axis=1)
     else:
@@ -37,15 +36,6 @@ def compute_cohen_kappa(y_true, y_pred, num_classes):
 
 
 def trainer(num_users, fet_extrct, scen, ft, config=None, strategy=None):
-    """
-    IMPROVED trainer with proper fine-tuning strategy
-    
-    Key changes:
-    1. Gradual unfreezing strategy
-    2. Larger classifier head
-    3. Better learning rate schedule
-    4. Data augmentation during training
-    """
     if config is None:
         config = {
             'frame_size': 40,
@@ -58,7 +48,6 @@ def trainer(num_users, fet_extrct, scen, ft, config=None, strategy=None):
     else:
         print(f"Reusing existing strategy with {strategy.num_replicas_in_sync} devices")
 
-    # IMPROVED fine-tuning strategy
     # ft=0: Unfreeze all layers (full fine-tuning)
     # ft=1: Freeze first 50% of layers
     # ft=2: Freeze first 75% of layers
@@ -95,7 +84,6 @@ def trainer(num_users, fet_extrct, scen, ft, config=None, strategy=None):
     print(f"Training classifier for {num_users} users")
     print(f"{'=' * 60}")
 
-    # Batch size - adjust based on number of users
     if num_users <= 20:
         batch_size_per_replica = 16
     elif num_users <= 50:
@@ -105,7 +93,6 @@ def trainer(num_users, fet_extrct, scen, ft, config=None, strategy=None):
     
     batch_size = batch_size_per_replica * strategy.num_replicas_in_sync
 
-    # Use subset of data for efficiency
     max_samples = 10000 if num_users <= 50 else 5000
 
     train_gen, val_gen, test_gen, steps = data_load_with_generators(
@@ -143,15 +130,13 @@ def trainer(num_users, fet_extrct, scen, ft, config=None, strategy=None):
     val_dataset = create_dataset(val_gen, steps['val'])
     test_dataset = create_dataset(test_gen, steps['test'])
 
-    # Build LARGER classifier within strategy scope
     with strategy.scope():
         inputs = Input(shape=input_shape)
         
         # Get features from pre-trained extractor
         x = fet_extrct(inputs, training=(ft == 0))  # Only train if fully unfrozen
         
-        # LARGER classification head for better capacity
-        # Scale size based on number of users
+        # Larger classification head for better capacity
         hidden_size = max(512, num_classes * 4)
         
         x = Dense(hidden_size, activation='relu',
@@ -203,7 +188,7 @@ def trainer(num_users, fet_extrct, scen, ft, config=None, strategy=None):
         
         optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
         
-        # Use label smoothing for better generalization
+        # Use label smoothing for better generalisation
         loss = tf.keras.losses.SparseCategoricalCrossentropy()
         
         resnettssd.compile(

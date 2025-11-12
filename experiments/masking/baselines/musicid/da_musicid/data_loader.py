@@ -4,14 +4,15 @@ import mne
 import gc
 import tensorflow as tf
 
+# legacy functions
 
 def data_load_origin(path, users, folders, frame_size=30):
-    """Legacy function - not used with EEG MMI dataset"""
+    """Legacy function"""
     pass
 
 
 def norma_origin(x_all):
-    """Legacy function - kept for compatibility"""
+    """Legacy function"""
     x = np.reshape(x_all, (x_all.shape[0] * x_all.shape[1], x_all.shape[2]))
     mean = np.mean(x, axis=0)
     std = np.std(x, axis=0)
@@ -22,7 +23,7 @@ def norma_origin(x_all):
 
 
 def user_data_split(x, y, samples_per_user):
-    """Legacy function - kept for compatibility"""
+    """Legacy function"""
     users, counts = np.unique(y, return_counts=True)
     x_train = np.array([])
     y_train = np.array([])
@@ -43,7 +44,6 @@ def load_edf_session(filepath, frame_size=40):
     """
     Load a single EDF file and extract sliding windows.
     Returns numpy array of shape (n_windows, frame_size, n_channels)
-    Memory-efficient version with explicit cleanup.
     """
     try:
         # Load EDF file
@@ -345,7 +345,7 @@ class EEGDataGenerator(tf.keras.utils.Sequence):
 
 def data_load_eeg_mmi_streaming(path, users, frame_size=40):
     """
-    Setup streaming data loading for EEG MMI dataset.
+    Setup streaming data loading.
     Returns file lists and normalization stats instead of loading all data.
 
     Returns:
@@ -379,8 +379,7 @@ def data_load_eeg_mmi_streaming(path, users, frame_size=40):
 # Keep legacy function for backward compatibility
 def data_load_eeg_mmi(path, users, frame_size=40):
     """
-    DEPRECATED: This function loads all data into memory and may cause OOM errors.
-    Use data_load_eeg_mmi_streaming instead.
+    DEPRECATED: OOM issues
     """
     print("WARNING: Using legacy data_load_eeg_mmi - this loads all data into memory!")
     print("Consider using data_load_eeg_mmi_streaming for better memory efficiency.")

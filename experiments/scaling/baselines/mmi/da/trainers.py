@@ -12,17 +12,6 @@ from optimized_data_loader import create_tf_dataset
 
 
 def cohen_kappa_score(y_true, y_pred, num_classes):
-    """
-    Calculate Cohen's Kappa score without sklearn or tensorflow_addons.
-
-    Args:
-        y_true: True labels (1D array)
-        y_pred: Predicted labels (1D array or 2D probabilities)
-        num_classes: Number of classes
-
-    Returns:
-        kappa: Cohen's Kappa score
-    """
     # Convert predictions to class labels if needed
     if len(y_pred.shape) > 1:
         y_pred = np.argmax(y_pred, axis=1)
@@ -57,7 +46,6 @@ def cohen_kappa_score(y_true, y_pred, num_classes):
 def trainer(num_users):
     """
     Train model on specified number of users from EEG MMI dataset.
-    Uses optimized tf.data pipeline to avoid memory issues and improve speed.
 
     Args:
         num_users: Number of users to include in classification task
@@ -67,12 +55,11 @@ def trainer(num_users):
         kappa_score: Cohen's Kappa score
     """
     frame_size = 40
-    BATCH_SIZE = 64  # Increased for better GPU utilization (can go higher with streaming)
+    BATCH_SIZE = 64
 
     path = "/app/data/1.0.0"
     # path = "/Users/belindahu/Desktop/thesis/biometrics-JEPA/mmi/dataset/physionet.org/files/eegmmidb/1.0.0"
 
-    # Use first num_users users
     users = list(range(1, num_users + 1))
 
     print(f"\n{'=' * 60}")
@@ -91,8 +78,7 @@ def trainer(num_users):
     print(f"Number of classes: {num_classes}")
     print(f"Number of channels: {n_channels}")
 
-    # Create optimized datasets with streaming
-    print("\nCreating streaming data pipelines (memory-efficient)...")
+    print("\nCreating streaming data pipelines...")
     print("Files will be loaded on-demand during training...")
     
     train_dataset, _ = create_tf_dataset(
@@ -103,7 +89,7 @@ def trainer(num_users):
         batch_size=BATCH_SIZE,
         shuffle=True,
         augment=True,  # Augmentation now pre-computed during loading
-        augmentation_fn=None  # Not needed anymore
+        augmentation_fn=None
     )
 
     val_dataset, _ = create_tf_dataset(
@@ -144,7 +130,7 @@ def trainer(num_users):
     outputs = Dense(num_classes, activation='softmax')(x)
     resnettssd = Model(inputs, outputs)
 
-    # Enable mixed precision for faster training on modern GPUs
+    # Enable mixed precision for faster training
     try:
         policy = tf.keras.mixed_precision.Policy('mixed_float16')
         tf.keras.mixed_precision.set_global_policy(policy)

@@ -45,7 +45,7 @@ class MusicIDMaskingExperiment:
         for d in [self.data_dir, self.models_dir, self.results_dir, self.plots_dir]:
             d.mkdir(exist_ok=True)
 
-        # Initialize checkpoint manager
+        # Initializs checkpoint manager
         checkpoint_dir = self.experiment_dir / "checkpoints"
         self.checkpoint_mgr = MaskingExperimentCheckpoint(checkpoint_dir)
 
@@ -66,7 +66,7 @@ class MusicIDMaskingExperiment:
 
         # Check for existing checkpoint
         if self.checkpoint_mgr.has_checkpoint():
-            print("⚠️  EXISTING CHECKPOINT FOUND")
+            print("  EXISTING CHECKPOINT FOUND")
             print("The experiment can be resumed from the last saved state")
 
     def step1_train_base_model(self):
@@ -166,7 +166,7 @@ class MusicIDMaskingExperiment:
                 channels=[32, 64, 128]
             )
 
-        # Initialize trainer
+        # Initialise trainer
         trainer = MaskingExperimentTrainer(
             model, 
             device=device,
@@ -593,7 +593,7 @@ class MusicIDMaskingExperiment:
                     metadata={'step': 3}
                 )
 
-            # Step 4: Visualizations
+            # Step 4: Visualisations
             self.step4_create_visualizations(accuracy_matrix, kappa_matrix, detailed_results)
 
             # Step 5: Save results
@@ -664,11 +664,11 @@ class MusicIDTestDataset(torch.utils.data.Dataset):
 
 
 def analyze_available_data(csv_dir):
-    """Analyze what data is available in the directory"""
+    """Analyse what data is available in the directory"""
     csv_dir = Path(csv_dir)
     csv_files = list(csv_dir.glob("*.csv"))
     
-    print(f"\nAnalyzing {len(csv_files)} CSV files in {csv_dir}...")
+    print(f"\nAnalysing {len(csv_files)} CSV files in {csv_dir}...")
     
     from collections import defaultdict
     from utils_musicid import parse_musicid_filename
@@ -704,13 +704,12 @@ def analyze_available_data(csv_dir):
 def main():
     """Main execution function"""
 
-    # First, analyze available data
+    # First, analyse available data
     csv_dir = '/app/data/musicid_augmented'
     if Path(csv_dir).exists():
         analyze_available_data(csv_dir)
     
     config = {
-        # CORRECTED PATHS - flat directory
         'raw_csv_dir': csv_dir,
         'experiment_dir': '/app/data/experiments/masking_musicid_unstructured',
 
@@ -718,7 +717,7 @@ def main():
         'model_checkpoint_path': '/app/data/jepa_logs_musicid_unstructured/xps/97d170e1/checkpoints/last.ckpt',
         'model_config_path': '/app/configs',
 
-        # Experiment parameters - UPDATE THESE based on analysis above
+        # Experiment parameters
         'user_ids': [1, 2],  # Users available in your data
         'train_sessions': [1, 2, 3],  # Sessions for training
         'val_sessions': [4],          # Sessions for validation

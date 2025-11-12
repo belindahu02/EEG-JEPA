@@ -110,7 +110,7 @@ def train_base_model(num_users, cache_size_gb=None):
     num_classes = num_users
 
     print(f"\n{'=' * 60}")
-    print(f"Training BASE MODEL with {num_users} users")
+    print(f"Training base model with {num_users} users")
     print(f"Cache size: {cache_size_gb}GB")
     print(f"{'=' * 60}\n")
 

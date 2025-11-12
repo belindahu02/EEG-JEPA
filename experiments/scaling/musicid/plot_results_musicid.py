@@ -1,7 +1,3 @@
-# =============================================
-# FIXED plot_results_musicid_time.py - Optimized for Imbalanced Data
-# =============================================
-
 from trainers_cosine_musicid import spectrogram_trainer_2d
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,10 +5,6 @@ import os
 import json
 import time
 from datetime import datetime
-
-# =============================================
-# CONFIGURATION
-# =============================================
 
 DATA_PATH = "/app/data/grouped_embeddings_musicid_unstructured"
 OUTPUT_PATH = "/app/data/experiments/scaling_musicid_unstructured/graph_data"
@@ -24,10 +16,6 @@ os.makedirs(OUTPUT_PATH, exist_ok=True)
 os.makedirs(GRAPH_PATH, exist_ok=True)
 os.makedirs(CHECKPOINT_PATH, exist_ok=True)
 os.makedirs(MODEL_PATH, exist_ok=True)
-
-# =============================================
-# EXPERIMENT PARAMETERS (FIXED FOR IMBALANCE)
-# =============================================
 
 TOTAL_USERS_AVAILABLE = 20
 RUNS_PER_USER_COUNT = 1
@@ -92,13 +80,13 @@ def load_checkpoint():
                 acc = backup_data.get('test_acc_list', [])
                 kappa = backup_data.get('kappa_score_list', [])
             except Exception as e:
-                print(f"⚠️  Warning: Could not load backup results: {e}")
+                print(f"  Warning: Could not load backup results: {e}")
 
         print(f"✓ Resuming from checkpoint: {start_idx}/{len(user_counts)} user counts completed")
         return start_idx, start_itr, acc, kappa
 
     except Exception as e:
-        print(f"⚠️  Error loading checkpoint: {e}")
+        print(f"  Error loading checkpoint: {e}")
         return None, None, [], []
 
 
@@ -205,19 +193,19 @@ try:
                     normalization_method=NORMALIZATION_METHOD,
                     model_type=MODEL_TYPE,
                     epochs=100,
-                    batch_size=8,          # Increased from 4
-                    lr=0.0003,              # Increased from 0.0005
+                    batch_size=8,
+                    lr=0.0003,
                     use_augmentation=True,
                     device='cuda',
                     save_model_checkpoints=True,
                     checkpoint_every=RUNS_PER_USER_COUNT,
                     max_cache_size=50,
                     use_cosine_classifier=True,
-                    cosine_scale=30.0,     # Decreased from 30.0
+                    cosine_scale=30.0,
                     label_smoothing=0.0,
-                    warmup_epochs=3,       # Decreased from 10
-                    dropout_rate=0.2,      # Decreased from 0.3
-                    classifier_dropout=0.3, # Decreased from 0.5
+                    warmup_epochs=3,
+                    dropout_rate=0.2,
+                    classifier_dropout=0.3,
                     lr_scheduler_type='cosine',
                     test_sessions_per_user=1,
                     val_sessions_per_user=1
@@ -241,7 +229,7 @@ try:
                 save_checkpoint(i, itr + 1, acc, kappa, experiment_start_time)
 
             except Exception as e:
-                print(f"⚠️  Error in run {itr + 1}: {e}")
+                print(f"️  Error in run {itr + 1}: {e}")
                 save_checkpoint(i, itr, acc, kappa, experiment_start_time)
                 continue
 
@@ -278,7 +266,7 @@ try:
             print(f"\n⏱  Estimated remaining time: {est_remaining / 3600:.1f} hours")
 
 except KeyboardInterrupt:
-    print("\n\n⚠️  Experiment interrupted. Saving progress...")
+    print("\n\n️  Experiment interrupted. Saving progress...")
     import pickle
     with open(os.path.join(OUTPUT_PATH, f"{model_name}_interrupted.pkl"), 'wb') as f:
         pickle.dump({'acc': acc, 'kappa': kappa}, f)

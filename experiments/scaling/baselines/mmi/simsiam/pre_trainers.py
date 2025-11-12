@@ -19,7 +19,6 @@ from transformations import *
 def tsne_manual_simple(X, n_components=2, n_iter=300, learning_rate=200.0):
     """
   Simplified t-SNE implementation for visualization
-  Much faster but less accurate than full t-SNE
   """
     n_samples = X.shape[0]
 
@@ -113,7 +112,7 @@ def pre_trainer(scen, fet, base_dir="/app/data/experiments/scaling/baselines"):
     def aug1_numpy(x):
         x = DA_Jitter(x, 0.5)
         x = DA_Scaling(x, 1)
-        return x.astype(np.float32)  # ✅ ensure correct dtype
+        return x.astype(np.float32)
 
     @tf.function
     def tf_aug1(input):
@@ -124,7 +123,7 @@ def pre_trainer(scen, fet, base_dir="/app/data/experiments/scaling/baselines"):
     def aug2_numpy(x):
         x = DA_Jitter(x, 0.5)
         x = DA_Scaling(x, 1)
-        return x.astype(np.float32)  # ✅ ensure correct dtype
+        return x.astype(np.float32)
 
     @tf.function
     def tf_aug2(input):

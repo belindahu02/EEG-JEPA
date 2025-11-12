@@ -1,7 +1,3 @@
-# =============================================
-# FIXED data_loader_musicid_time.py with Weighted Sampling
-# =============================================
-
 import torch
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 import os
@@ -179,7 +175,7 @@ def create_session_based_splits(user_session_data, user_ids, test_sessions_per_u
     missing_classes = expected_classes - train_classes
 
     if missing_classes:
-        print(f"⚠️  ERROR: Missing classes in training: {[user_ids[i] for i in missing_classes]}")
+        print(f"️  ERROR: Missing classes in training: {[user_ids[i] for i in missing_classes]}")
         for missing_class in missing_classes:
             val_indices = [i for i, label in enumerate(val_labels) if label == missing_class]
             test_indices = [i for i, label in enumerate(test_labels) if label == missing_class]
@@ -204,7 +200,7 @@ def create_session_based_splits(user_session_data, user_ids, test_sessions_per_u
 
 def create_weighted_sampler(labels):
     """
-    CRITICAL FIX: Create weighted sampler to balance classes
+    Create weighted sampler to balance classes
     """
     labels = np.array(labels)
     class_counts = np.bincount(labels)
@@ -234,7 +230,7 @@ def create_session_based_dataloaders(data_path, user_ids, normalization='none', 
                                      augment_train=False, cache_size=100,
                                      test_sessions_per_user=1, val_sessions_per_user=1):
     """
-    FIXED: Create data loaders with weighted sampling for class balance
+    Create data loaders with weighted sampling for class balance
     """
     print("\n" + "=" * 80)
     print("Creating FIXED session-based data loaders with class balancing")
@@ -263,7 +259,6 @@ def create_session_based_dataloaders(data_path, user_ids, normalization='none', 
                                       add_channel_dim=True, augment=False,
                                       cache_size=cache_size // 2)
 
-    # CRITICAL FIX: Use weighted sampler for training
     train_sampler = create_weighted_sampler(train_labels)
 
     train_loader = DataLoader(

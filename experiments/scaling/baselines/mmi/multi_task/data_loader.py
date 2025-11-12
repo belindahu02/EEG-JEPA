@@ -99,8 +99,7 @@ def compute_normalization_stats(path, users, sessions, frame_size=30, max_sample
 
 class EEGDataGenerator:
     """
-    Memory-efficient generator for streaming EEG data in batches
-    Optimized for large datasets with 109 users and all sessions
+    Generator for streaming EEG data in batches
     """
 
     def __init__(self, path, users, sessions, frame_size=30, batch_size=32,
@@ -156,12 +155,10 @@ class EEGDataGenerator:
         if data.shape[0] == 0:
             return None, None
 
-        # Normalize BEFORE creating windows to save memory
         if self.mean is not None and self.std is not None:
             data = (data - self.mean) / self.std
 
         # Create sliding windows with 50% overlap
-        # Using stride_tricks is memory efficient (creates view, not copy)
         windows = np.lib.stride_tricks.sliding_window_view(
             data, (self.frame_size, data.shape[1])
         )[::self.frame_size // 2, :]
@@ -177,13 +174,12 @@ class EEGDataGenerator:
         windows = np.ascontiguousarray(windows, dtype=np.float32)
         labels = np.full(windows.shape[0], user_id, dtype=np.int32)
 
-        # Free original data immediately
         del data
         
         return windows, labels
 
     def __iter__(self):
-        """Iterator that yields batches - INFINITE LOOP for multiple epochs"""
+        """Iterator that yields batches"""
         while True:
             # Shuffle file order if requested
             file_indices = np.arange(self.n_files)
@@ -241,11 +237,6 @@ class EEGDataGenerator:
             gc.collect()
 
     def get_steps_per_epoch(self):
-        """
-        Estimate number of batches per epoch
-        FAST estimation - doesn't load all data
-        """
-        # For speed, we'll estimate based on first few files
         sample_size = min(10, self.n_files)
         avg_samples_per_file = 0
         valid_files = 0
@@ -352,7 +343,6 @@ def data_load_with_generators(path, users, frame_size=30, batch_size=32,
 
 class AugmentedEEGDataGenerator:
     """Generator that applies data augmentation on-the-fly"""
-
     def __init__(self, base_generator, transformations, sigma_l, ext=False):
         self.base_generator = base_generator
         self.transformations = transformations
