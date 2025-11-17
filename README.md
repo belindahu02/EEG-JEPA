@@ -8,6 +8,7 @@ This repository contains the code and experiments for EEG-JEPA, the first applic
 
 **Code:** [GitHub Repository](https://github.com/belindahu02/EEG-JEPA)
 
+**Presentation:** [Google Slides](https://docs.google.com/presentation/d/1vFMVr8ZfJrfUNWvF9Z4At-5UPCQ8hGHIGp-aIJMvl1Q/edit?usp=sharing)
 ## Repository Structure
 
 ### 1. Data Pre-processing ([data-pipeline/](https://github.com/belindahu02/EEG-JEPA/tree/main/data-pipeline))
